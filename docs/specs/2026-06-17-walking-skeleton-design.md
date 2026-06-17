@@ -1,6 +1,6 @@
 # Walking Skeleton (Sub-project 0) — Design Spec
 
-> Status: Draft for review
+> Status: Revised after design review (v2)
 > Date: 2026-06-17
 > Author: Brainstormed via Claude Code (superpowers:brainstorming)
 > Sub-project: 0 of the Register System build sequence
@@ -16,7 +16,7 @@ spec → plan → implementation cycle:
 
 | # | Sub-project | Delivers |
 |---|---|---|
-| **0** | **Walking skeleton (this spec)** | Both repos scaffolded, local Postgres wired, one throwaway vertical slice proving every layer, tests + dev workflow |
+| **0** | **Walking skeleton (this spec)** | Both repos scaffolded, local Postgres wired, one throwaway vertical slice proving every layer, tests + CI + dev workflow + conventions |
 | 1 | Auth + clinic workspace | Supabase phone-OTP + email/pw, clinic boundary, roles |
 | 2 | Core entities | Clinic, settings, doctor, assistant, patient CRUD + patient search |
 | 3 | Scheduling engine | Availability → slots → requests → approval → appointments (atomic capacity) |
@@ -29,38 +29,51 @@ every future feature will copy — *before* any real domain logic is built. It d
 everything downstream.
 
 The slice built here is **throwaway**: it is deleted once real features begin. Its value is
-the proven plumbing and the established pattern, not the feature itself.
+the proven plumbing and the established conventions, not the feature itself. Because the
+skeleton *sets the patterns* for all 19 entities, decisions that are cheap now but expensive
+to retrofit later are deliberately locked here.
 
 ---
 
-## 2. Scope Decisions (locked during brainstorming)
+## 2. Scope Decisions (locked during brainstorming + design review)
 
 - **Two separate repos** (per tech stack): `dentist-registry-backend` (FastAPI),
   `dentist-registry-frontend` (Next.js). No monorepo.
 - **Local-first.** Nothing is provisioned yet (no Supabase/Render/Vercel). Provisioning and
-  deployment are a *later step within this sub-project*, after local works end-to-end.
+  deployment (CD) are a *later step within this sub-project*, after local works end-to-end.
 - **Local Postgres via Docker Compose** for the DB. `DATABASE_URL` repoints to Supabase
   Postgres later with no code change.
 - **Full read + write vertical slice** through a throwaway `ping_beta` entity, exercising
   every documented layer once.
-- **Backend layout: layered modular monolith** (`routes → services → models`) from day one,
-  per Golden Rules 13.1 (modular monolith) and 13.2 (business logic backend-side, not in UI
-  or routes).
+- **Backend layout: feature-first modular monolith** — organized by domain module
+  (`app/modules/<domain>/`), each module retaining a service layer (business logic
+  backend-side, per Golden Rules 13.1/13.2). See §3a for the import-discipline rules that
+  keep this from degrading into cross-module spaghetti.
+- **Sync SQLAlchemy** (not async) — simplest for this scale; do not introduce async.
+- **Database conventions locked now** (§4a): UUID primary keys, timezone-aware timestamps,
+  and a `MetaData` constraint-naming convention.
+- **Consistent API error contract** + FastAPI exception handlers from day one (§6).
+- **Reproducible installs:** committed lockfiles in both repos; `uv` for Python tooling.
+- **CI from day one** (lint + tests on every PR); CD remains deferred.
+- **`CLAUDE.md` in each code repo** to orient AI-assisted development and onboarding.
+- **Tests run against Postgres** (never SQLite).
 - **Beta table naming** per Golden Rule 4.5: the throwaway table is `ping_beta`.
 
 ### Out of scope (explicit)
 Auth / Supabase integration; any real domain entity (clinic, patient, etc.); deployment to
-Render/Vercel; WhatsApp / Google Calendar / hooks / audit / AI; shadcn theming beyond
-defaults.
+Render/Vercel (CD); WhatsApp / Google Calendar / hooks / audit / AI; shadcn theming beyond
+defaults; OpenAPI→TypeScript type generation (planned for sub-project 2, not the throwaway
+slice).
 
 ---
 
 ## 3. Architecture Overview
 
 ```
-Next.js (App Router, :3000)  ──REST──▶  FastAPI (:8000)  ──SQLAlchemy 2.x──▶  Postgres (Docker, :5432)
-  TanStack Query + RHF/Zod                routes → services → models                 table: ping_beta
-  shadcn/ui + Tailwind                     Pydantic schemas, Alembic migrations
+Next.js (App Router, :3000)  ──REST──▶  FastAPI (:8000)  ──SQLAlchemy 2.x (sync)──▶  Postgres (Docker, :5432)
+  TanStack Query + RHF/Zod                /api/v1, feature modules                       table: ping_beta
+  shadcn/ui + Tailwind                     services own DB access + logic
+  typed api-client (parses error envelope) Pydantic schemas, Alembic migrations
 ```
 
 The `ping_beta` entity flows through every layer once. CORS on the backend allows the
@@ -68,104 +81,168 @@ frontend origin (`http://localhost:3000`).
 
 ---
 
+## 3a. Module Boundaries & Import Discipline (anti-spaghetti)
+
+Feature-first structure only pays off if dependencies flow one way. These rules are
+**mandatory** and belong in the backend `CLAUDE.md`:
+
+1. **One-way dependency direction:** `core/` ← `modules/` ← `main.py`.
+   - `core/` (config, database, deps, errors, logging) is shared and imports *nothing* from
+     `modules/`.
+   - A module may import from `core/`. A module must **not** reach into another module's
+     internals.
+2. **Cross-module calls go through the other module's `service`** (its public interface),
+   never through its `models`/`router`/internal helpers. If two modules need shared types,
+   the shared type moves to `core/` or a small shared module — it is not imported sideways.
+3. **No circular imports.** SQLAlchemy relationships across modules use string-based
+   references (e.g. `relationship("Patient")`, `ForeignKey("patient.id")`), so modules don't
+   import each other's model classes at definition time.
+4. **Single Alembic model registry:** one module (`app/db/base.py`) imports every model so
+   Alembic autogenerate sees the full metadata. This is the *only* place that aggregates
+   models; modules never import models from each other to "register" them.
+5. **Small, single-purpose files.** When a module file grows large, split by responsibility
+   within the module folder rather than spilling logic into routers or other modules.
+6. **Routers are thin.** Routers parse/validate input, call a service, shape the response.
+   No business logic or direct DB queries in routers (Golden Rule 13.2).
+
+These rules are enforced by review (and, where cheap, by `ruff` import rules). The intent:
+touching one feature should mean opening one folder, with imports that point only "inward."
+
+---
+
 ## 4. Backend — `dentist-registry-backend`
 
-### Directory layout
+### Directory layout (feature-first)
 ```
 app/
-├── main.py                      # FastAPI app factory; CORS (allow :3000); mounts routers
+├── main.py                      # app factory; CORS (:3000); mounts each module router under /api/v1
 ├── core/
-│   ├── config.py                # Pydantic Settings (env-driven: DATABASE_URL, CORS origins)
-│   └── database.py              # SQLAlchemy 2.x engine + session dependency
-├── models/
-│   └── ping.py                  # PingBeta ORM model → table `ping_beta`
-├── schemas/
-│   └── ping.py                  # Pydantic request/response models
-├── services/
-│   └── ping_service.py          # business logic: create_ping(), list_pings()
-└── api/
-    ├── deps.py                  # shared dependencies (db session)
-    └── routes/
-        ├── health.py            # GET /health (liveness), GET /health/db (DB connectivity)
-        └── ping.py             # GET /api/pings, POST /api/pings
+│   ├── config.py                # Pydantic Settings (DATABASE_URL, CORS origins, env)
+│   ├── database.py              # SQLAlchemy 2.x engine + Session dependency
+│   ├── base.py                  # DeclarativeBase + MetaData naming convention (§4a)
+│   ├── deps.py                  # shared FastAPI dependencies (db session)
+│   ├── errors.py                # DomainError types + exception handlers + error envelope
+│   └── logging.py               # minimal structured, PII-aware logging config
+├── db/
+│   └── base.py                  # imports ALL models for Alembic autogenerate (single registry)
+├── modules/
+│   └── ping/                    # THROWAWAY domain module
+│       ├── router.py            # GET /pings, POST /pings (mounted at /api/v1/pings)
+│       ├── schemas.py           # Pydantic request/response models
+│       ├── models.py            # PingBeta ORM model → table `ping_beta`
+│       └── service.py           # business logic: create_ping(), list_pings()
+└── health.py                    # GET /health (liveness), GET /health/db (DB connectivity)
 alembic/
-├── env.py                       # wired to models' metadata
+├── env.py                       # imports app/db/base.py metadata for autogenerate
 └── versions/0001_create_ping_beta.py
 tests/
-├── conftest.py                  # test DB fixtures, transactional rollback, TestClient
-├── unit/test_ping_service.py
-└── integration/test_ping_api.py
+├── conftest.py                  # Postgres test DB fixtures, transactional rollback, TestClient
+└── ping/
+    ├── test_service.py          # unit: service against a session
+    └── test_router.py           # integration: API via TestClient
+.github/workflows/ci.yml         # ruff + pytest on PR (Postgres service container)
+pyproject.toml                   # deps + tool config (ruff, pytest)
+uv.lock                          # committed lockfile
 alembic.ini
-pyproject.toml                   # dependency + tool config
-Makefile                         # install, migrate, run, test, lint
+Makefile                         # install (uv sync), migrate, run, test, lint
 docker-compose.yml               # postgres:16 service
 .env.example                     # DATABASE_URL, CORS origins (no real secrets)
+CLAUDE.md                        # conventions, structure, commands, source-of-truth links
 README.md
 ```
-
-### Layering rule
-Routes call services; services own all DB access and business logic; routes never touch the
-DB session directly except to pass it into a service. This establishes the boundary the
-Golden Rules require and is the pattern every future feature copies.
 
 ### Health endpoints
 - `GET /health` → liveness, no DB touch (used by deploy platforms later).
 - `GET /health/db` → executes a trivial query to confirm DB connectivity.
 
-### Dependencies (all OSS — MIT/BSD/Apache, satisfying Golden Rule 3.1)
+### Dependencies (all permissive OSS — MIT/BSD/Apache, satisfying Golden Rule 3.1 and the
+license-vetting habit)
 `fastapi`, `uvicorn[standard]`, `sqlalchemy>=2`, `alembic`, `pydantic`, `pydantic-settings`,
-`psycopg[binary]`; dev: `pytest`, `httpx`, `ruff`.
+`psycopg[binary]`; dev: `pytest`, `httpx`, `ruff`. Tooling: `uv`.
+
+---
+
+## 4a. Database Conventions (locked — expensive to retrofit)
+
+1. **Primary keys: UUID.** Non-enumerable IDs avoid leaking record counts / enabling scraping
+   via sequential URLs — appropriate for a healthcare-adjacent system. (UUIDv7 acceptable if
+   index locality matters later; default UUID is fine at clinic scale.)
+2. **Timestamps: timezone-aware.** `TIMESTAMP WITH TIME ZONE`, `server_default=func.now()`,
+   storing UTC. Naive timestamps are forbidden — appointment times must be unambiguous.
+3. **Constraint/index naming convention** set once on `Base.metadata.naming_convention`
+   (standard `ix_/uq_/ck_/fk_/pk_` templates) so Alembic autogenerate emits consistent,
+   named constraints and future `ALTER`/downgrade migrations are stable.
 
 ---
 
 ## 5. Frontend — `dentist-registry-frontend`
 
-### Directory layout
+### Directory layout (feature-first)
 ```
 src/
 ├── app/
 │   ├── layout.tsx               # root layout; wraps providers
-│   ├── providers.tsx            # TanStack Query QueryClientProvider
+│   ├── providers.tsx            # 'use client' — TanStack Query QueryClientProvider
 │   └── page.tsx                 # home: backend health badge + ping list + add-ping form
 ├── lib/
-│   ├── api-client.ts            # typed fetch wrapper; base URL from env
+│   ├── api-client.ts            # typed fetch wrapper; base URL from env; parses error envelope
 │   └── env.ts                   # zod-validated NEXT_PUBLIC_ env access
-├── features/ping/
-│   ├── api.ts                   # query/mutation functions calling the backend
-│   ├── hooks.ts                 # usePings (useQuery), useCreatePing (useMutation)
-│   ├── schema.ts                # Zod schema for the form
-│   └── ping-form.tsx            # React Hook Form + Zod + shadcn form
-└── components/ui/               # shadcn components (button, input, form, card)
-tests/e2e/ping.spec.ts           # Playwright happy-path
+└── features/ping/
+    ├── api.ts                   # query/mutation functions calling the backend
+    ├── hooks.ts                 # usePings (useQuery), useCreatePing (useMutation)
+    ├── schema.ts                # Zod schema for the form
+    └── ping-form.tsx            # React Hook Form + Zod + shadcn form
+components/ui/                    # shadcn components (button, input, form, card)
+tests/e2e/ping.spec.ts            # Playwright full-stack happy-path
+.github/workflows/ci.yml          # typecheck + build (+ optional Playwright) on PR
 playwright.config.ts
-components.json                  # shadcn config
+components.json                   # shadcn config
 tailwind config + globals.css
 next.config.ts
-package.json
-.env.local.example               # NEXT_PUBLIC_API_BASE_URL
+package.json + package-lock.json  # committed lockfile
+.env.local.example                # NEXT_PUBLIC_API_BASE_URL
+CLAUDE.md                         # conventions, structure, commands, source-of-truth links
 README.md
 ```
 
-### Stack (per tech stack doc)
+### Stack & conventions
 Next.js (App Router) + TypeScript, shadcn/ui, Tailwind, React Hook Form, Zod, TanStack Query.
-REST only. Local component state + TanStack Query (no Redux).
+REST only; local component state + TanStack Query (no Redux). Client-side data fetching
+against FastAPI is the chosen pattern (the app is effectively a client talking to a separate
+API) — providers and forms are client components; we don't fight RSC by forcing server-side
+fetching here.
+
+**Going-forward testing split (documented now, not built in the skeleton):** Vitest + React
+Testing Library for component/logic units (API mocked); Playwright reserved for true
+end-to-end flows. The skeleton ships the one full-stack Playwright happy-path only.
 
 ---
 
-## 6. Vertical Slice Contract — `ping_beta`
+## 6. API Contract — `ping_beta` + error envelope
 
-**Entity fields:** `id` (primary key), `message` (string, required, non-empty),
-`created_at` (timestamp, server-set).
+All routes are mounted under **`/api/v1`**.
 
-**Endpoints:**
+**Entity fields:** `id` (UUID, PK), `message` (string, required, non-empty),
+`created_at` (timestamptz, server-set).
+
+**Success endpoints:**
 | Method | Path | Request | Response |
 |---|---|---|---|
-| `POST` | `/api/pings` | `{ "message": "<non-empty string>" }` | `201 { id, message, created_at }` |
-| `GET` | `/api/pings` | — | `200 [ { id, message, created_at }, ... ]` (newest first) |
+| `POST` | `/api/v1/pings` | `{ "message": "<non-empty string>" }` | `201 { id, message, created_at }` |
+| `GET` | `/api/v1/pings` | — | `200 [ { id, message, created_at }, ... ]` (newest first) |
+
+**Error envelope** (uniform across the whole API):
+```json
+{ "error": { "code": "string", "message": "human-readable", "details": { } } }
+```
+- FastAPI exception handlers map validation errors and app-level `DomainError`s to this shape.
+- The skeleton demonstrates it with one deliberate path: `POST /api/v1/pings` with an empty
+  `message` returns `422` in the envelope, and the frontend `api-client` parses and surfaces it.
 
 **Frontend behavior:** home page calls `GET /health/db` for a status badge, lists pings via
 `useQuery`, and renders an RHF+Zod form that `POST`s a ping via `useMutation`; on success it
-invalidates the pings query so the new row appears. Validation: message required, non-empty.
+invalidates the pings query so the new row appears; on error it shows the parsed envelope
+message.
 
 ---
 
@@ -174,68 +251,101 @@ invalidates the pings query so the new row appears. Validation: message required
 **Backend**
 ```bash
 docker compose up -d     # start postgres:16
-make install             # create venv + install deps
+make install             # uv sync (creates venv + installs from uv.lock)
 make migrate             # alembic upgrade head → creates ping_beta
 make run                 # uvicorn on http://localhost:8000
+make test                # pytest against the Postgres test database
+make lint                # ruff
 ```
 
 **Frontend**
 ```bash
 npm install
 npm run dev              # http://localhost:3000
+npm run test:e2e         # Playwright happy-path (full stack must be up)
 ```
 
 **Env files** (`.example` committed, real values local only — Golden Rule 11.2):
 - Backend `.env`: `DATABASE_URL=postgresql+psycopg://...localhost:5432/...`, CORS origins.
+  docker-compose credentials must match this.
 - Frontend `.env.local`: `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000`.
 
 ---
 
 ## 8. Testing (establishes the P0 pattern)
 
+- **Engine: Postgres, never SQLite.** Tests run against a dedicated test database on the same
+  Docker Postgres. This matters because the scheduling engine (sub-project 3) depends on
+  Postgres-specific row locking (`SELECT … FOR UPDATE`) for atomic capacity (Golden Rules 5.2,
+  10.4); SQLite would give false confidence and can't express those concurrency tests.
 - **Backend (pytest):**
   - *Unit* — `ping_service` create/list against a session.
-  - *Integration* — API via `TestClient` against a test database, with per-test
-    transactional rollback so tests are isolated and repeatable.
-- **Frontend (Playwright):** one happy-path e2e — load home, submit the form, assert the new
-  ping appears in the list.
-- This is intentionally the smallest set that demonstrates the unit + integration + e2e
-  layers future features will follow (Golden Rules 10.1–10.2).
+  - *Integration* — API via `TestClient`, per-test transactional rollback for isolation.
+  - *Error path* — empty `message` returns the `422` error envelope.
+- **Frontend (Playwright):** one full-stack happy-path — load home, submit the form, assert
+  the new ping appears. (Vitest component tests are the documented going-forward default but
+  are not part of the skeleton.)
 
 ---
 
-## 9. Git / PR Workflow
+## 9. CI/CD
+
+**CI (now):** GitHub Actions on every PR, per repo.
+- Backend `ci.yml`: spin up a Postgres service container → `uv sync` → `make lint` (ruff) →
+  `make migrate` → `make test` (pytest).
+- Frontend `ci.yml`: `npm ci` → typecheck → `next build`. (Full-stack Playwright in CI is
+  optional initially — it needs the backend; if enabled, run it as a separate job that boots
+  both. Default: keep PR CI fast; run e2e locally / pre-merge.)
+
+**CD (deferred):** deployment to Render (backend) / Vercel (frontend) + remote Supabase is a
+follow-on step in this sub-project, started only once local + CI are green.
+
+---
+
+## 10. Git / PR Workflow
 
 Per the personal-environment rules: never push to `main` directly; always feature branch →
 PR → review → merge, using `gh-personal` and the `github-personal` remote.
 
 Deliverables:
 - **Spec PR** (this document) in `dentail-register-docs` from branch `spec/walking-skeleton`.
-- **Backend PR** in `dentist-registry-backend` (scaffold + slice).
-- **Frontend PR** in `dentist-registry-frontend` (scaffold + slice).
+- **Plan** in `dentail-register-docs/docs/plans/` (written via writing-plans before code).
+- **Backend PR** in `dentist-registry-backend` (scaffold + slice + CI + CLAUDE.md).
+- **Frontend PR** in `dentist-registry-frontend` (scaffold + slice + CI + CLAUDE.md).
 
 ---
 
-## 10. Acceptance Criteria
+## 11. Acceptance Criteria
 
 The walking skeleton is complete when:
 1. `docker compose up -d` + `make migrate` + `make run` brings the backend up with
    `ping_beta` created; `GET /health` and `GET /health/db` both return healthy.
 2. `npm run dev` serves the home page; it shows a healthy backend badge.
 3. Submitting the form creates a ping; it appears in the list without a manual refresh.
-4. Backend unit + integration tests pass (`make test`).
-5. Frontend Playwright happy-path passes.
-6. `.env.example` / `.env.local.example` exist; no real secrets committed.
-7. All three PRs (spec, backend, frontend) are merged via `gh-personal`.
+4. Submitting an empty message surfaces the parsed error-envelope message in the UI.
+5. Backend unit + integration + error-path tests pass against Postgres (`make test`).
+6. Frontend Playwright happy-path passes.
+7. **CI is green on both repos' PRs** (ruff + pytest; typecheck + build).
+8. Committed **lockfiles** exist (`uv.lock`, `package-lock.json`).
+9. **`CLAUDE.md`** exists in each code repo with structure, conventions, commands, and
+   source-of-truth links.
+10. DB conventions are in force: UUID PKs, tz-aware timestamps, `MetaData` naming convention.
+11. `.env.example` / `.env.local.example` exist; no real secrets committed.
+12. All three PRs (spec, backend, frontend) are merged via `gh-personal`.
 
-(Deployment to Render/Vercel + remote Supabase is a follow-on step in this sub-project,
-tracked separately once local is green.)
+(CD — Render/Vercel + remote Supabase — is a follow-on step once the above is green.)
 
 ---
 
-## 11. Known Domain Ambiguities (deferred — do NOT touch the skeleton)
+## 12. Known Domain Ambiguities (deferred — do NOT touch the skeleton)
 
 The domain digest surfaced ~13 ambiguities (e.g., availability-window state transitions,
 slot lifecycle during schedule changes, `created_by`/`requested_by`/`approved_by` semantics,
 patient-deletion vs. audit retention, follow-up status reversion). None affect the walking
 skeleton. They should be resolved before the scheduling-engine sub-project (#3).
+
+**Sequencing note (from review):** Golden Rule 7.1 requires audit events for scheduling
+actions, but Audit (#4) currently follows the Scheduling engine (#3). When we reach #3 we
+will build a minimal append-only audit primitive *alongside* the scheduling transitions
+(within the same transaction, Golden Rule 13.3) and expand it in #4, rather than retrofitting
+audit calls afterward. To be finalized at the #3 spec.
