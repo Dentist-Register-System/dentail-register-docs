@@ -746,6 +746,8 @@ WhatsApp and notification templates must support per-locale variants with Englis
 
 # 17. UI & Design System Rules
 
+> **Design language changed (2026-06-18):** the product pivoted from **Linear × Stripe** to **Material 3** (pastel tonal surfaces, soft elevation, 12–16px radius, Roboto, Material Symbols, indigo usable as fills/gradients). Recorded decision: `docs/specs/2026-06-18-ui-redesign-m3-design.md` (interim authoritative reference). These rules and `Design/01–05` are being rewritten to M3 as part of that work. The token-discipline / both-themes / mobile-first / a11y rules below still hold — only the *aesthetic* changed.
+
 ## Rule 17.1 — Follow the design system.
 
 All UI must follow the `Design/` system (philosophy, tokens, components, theme, cross-platform).

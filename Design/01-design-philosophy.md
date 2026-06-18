@@ -1,4 +1,6 @@
-<!-- Status: Draft for review | Date: 2026-06-18 -->
+<!-- Status: SUPERSEDED — being rewritten to Material 3 | Date: 2026-06-18 -->
+
+> ⚠️ **Superseded (2026-06-18):** the Linear × Stripe direction below has been replaced by **Material 3**. See the recorded decision + interim authoritative spec: `docs/specs/2026-06-18-ui-redesign-m3-design.md`. This document is being rewritten to M3 as part of the UI redesign. Until then, treat the M3 spec as the source of truth where it conflicts with the text below.
 
 # Design Philosophy
 
