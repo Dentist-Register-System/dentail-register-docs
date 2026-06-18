@@ -237,7 +237,9 @@ Warn the assistant. Never block creation. Humans make the final decision.
 
 ## Invite
 
-Assistant creates doctor.
+~~Assistant creates doctor.~~
+
+> **Changed in SP2 (2026-06-18):** doctor (and assistant) creation is restricted to **owner / practice_manager** for V1 — not the assistant. Recorded decision in `docs/specs/2026-06-18-core-entities-design.md` §2/§15. Widenable to assistants later with no schema change.
 
 Fields:
 - name
