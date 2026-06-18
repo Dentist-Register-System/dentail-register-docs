@@ -9,6 +9,7 @@ Clinics need standardized but editable communication for confirmations, cancella
 ## Core Information It Holds
 - Template name
 - Template type
+- Locale / language (per-locale variants; English default/fallback)
 - Content
 - Active/inactive status
 - Clinic
@@ -20,6 +21,10 @@ Clinics need standardized but editable communication for confirmations, cancella
 - Used by communication messages
 - Used during appointment completion
 - Used for WhatsApp workflows
+
+## Localization
+- Templates must be localization-ready: a logical template can have per-locale content variants, selected by the recipient's or clinic's locale, with English as the default/fallback.
+- Do not hardcode message bodies in a single language. (See PRD §39 and Golden Rule 16.5.)
 
 ## Lifecycle / States
 - Active

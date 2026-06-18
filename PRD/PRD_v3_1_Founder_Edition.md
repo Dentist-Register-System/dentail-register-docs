@@ -814,6 +814,44 @@ These are intentionally excluded from V1.
 
 ---
 
+# 39. Internationalization & Localization (i18n)
+
+The product is India-first and must support multiple languages without later refactoring. Internationalization is a core product requirement, not an enhancement.
+
+## Locales
+- The application is i18n-ready from the beginning.
+- English is the default locale.
+- Hindi is the first non-English supported language.
+- Marathi is planned next, because the initial market is Pune / Maharashtra.
+
+## What must be localizable (never hardcoded)
+All user-facing text must come from translation resources, not literals in code:
+- UI text, page titles, navigation / sidebar labels
+- Form labels, placeholders, buttons
+- Validation messages
+- Status labels (appointment states, member roles/statuses, etc.)
+- Empty states and loading states
+- Notification copy
+- WhatsApp / communication templates
+
+## Frontend owns user-facing translation
+- The backend returns stable, machine-readable codes for errors and statuses wherever possible.
+- The frontend translates those codes into localized, user-facing messages.
+- English backend messages must not be used as the display source.
+
+## Language preference
+- Clinic-level and user-level language preference are supported conceptually.
+- For V1, locale may be stored client-side; a persisted user/clinic preference can follow without refactoring.
+
+## Clinical / entered data is not translated
+- Human-entered content — patient names, doctor notes, treatment notes, complaints — is stored and displayed exactly as entered.
+- V1 does not auto-translate clinical content. Only product/UI chrome is localized.
+
+## Communication templates
+- WhatsApp and notification templates must be localization-ready (selectable per recipient / clinic locale), with English as the default/fallback.
+
+---
+
 # Closing Statement
 
 ***This product is not attempting to reinvent healthcare software. It is attempting to solve a narrow but extremely painful operational problem. If successful, clinics should feel that operational coordination became dramatically easier while requiring minimal behavioral change from doctors, assistants, and patients.***

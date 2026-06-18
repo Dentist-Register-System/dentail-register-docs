@@ -110,6 +110,15 @@ REST APIs only.
 
 Do not introduce GraphQL.
 
+## Internationalization (i18n)
+
+react-i18next (with i18next-browser-languagedetector).
+
+- Client-side locale, stored in localStorage. No route-prefix locale in V1.
+- English is the default/fallback locale; Hindi is the first additional language; Marathi planned next (Pune / Maharashtra market).
+- All user-facing strings live in translation resources, never hardcoded.
+- The frontend translates backend error/status **codes** into localized messages.
+
 ---
 
 # Backend Stack

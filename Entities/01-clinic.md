@@ -13,6 +13,7 @@ The product is built around clinic-level coordination. Doctors, assistants, pati
 - Clinic operating hours
 - Clinic address, if needed
 - Clinic-level configuration
+- Default clinic language / locale (English default)
 - Active/inactive status
 
 ## Relationships
