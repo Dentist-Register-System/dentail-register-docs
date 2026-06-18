@@ -66,7 +66,7 @@ Semantic tokens are declared as CSS custom properties. Light-theme values live o
   --success:     #16A34A;
   --success-foreground: #FFFFFF;
   --warning:     #D97706;
-  --warning-foreground: #FFFFFF;
+  --warning-foreground: #111827;
   --info:        #2563EB;
   --info-foreground: #FFFFFF;
   --overlay:     rgba(0, 0, 0, 0.50);
@@ -131,7 +131,7 @@ Representative hex/oklch values — tune at implementation time. All pairs must 
 | `--success` | `#16A34A` | `#22C55E` | Confirmations, done states |
 | `--success-foreground` | `#FFFFFF` | `#FFFFFF` | Label on success fills |
 | `--warning` | `#D97706` | `#F59E0B` | Cautionary states |
-| `--warning-foreground` | `#FFFFFF` | `#111827` | Label on warning fills |
+| `--warning-foreground` | `#111827` | `#111827` | Label on warning fills (dark text on amber — AA) |
 | `--info` | `#2563EB` | `#3B82F6` | Informational states |
 | `--info-foreground` | `#FFFFFF` | `#FFFFFF` | Label on info fills |
 | `--overlay` | `rgba(0,0,0,0.50)` | `rgba(0,0,0,0.60)` | Modal/sheet scrim |
