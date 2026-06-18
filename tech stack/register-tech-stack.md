@@ -119,6 +119,15 @@ react-i18next (with i18next-browser-languagedetector).
 - All user-facing strings live in translation resources, never hardcoded.
 - The frontend translates backend error/status **codes** into localized messages.
 
+## Theming & Design Tokens
+
+Tailwind CSS with **CSS-variable semantic design tokens**; `next-themes` for theme switching.
+
+- Light / Dark / Follow-System; **dark mode is a primary target**. System is the default; explicit choice persists.
+- **Semantic tokens only — no hardcoded colors.** shadcn/ui components are aligned to the tokens.
+- Neutral-forward UI with a single calm-indigo accent (color = state/action, not decoration).
+- Governed by the `Design/` system docs (philosophy, tokens, components, theme, cross-platform) and the Phase-0 implementation plan. Mobile-first; WCAG 2.1 AA.
+
 ---
 
 # Backend Stack
