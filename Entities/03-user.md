@@ -14,6 +14,7 @@ Doctors, assistants, clinic owners, and practice managers all need authenticated
 - Account status
 - Linked clinic memberships
 - Role assignments
+- Language preference (UI locale; English default)
 
 ## Relationships
 - May have one or more clinic memberships

@@ -720,7 +720,31 @@ Claude Code must never:
 
 ---
 
-# 16. Final Operating Principle
+# 16. Internationalization Rules
+
+## Rule 16.1 — No hardcoded user-facing strings.
+
+All user-facing text (labels, buttons, placeholders, validation messages, status labels, empty/loading states, notification copy) must come from translation resources. Do not embed display strings as literals in components.
+
+## Rule 16.2 — Backend returns stable codes; frontend translates.
+
+Prefer stable, machine-readable codes for errors and statuses. The frontend maps codes to localized messages. Do not rely on English backend messages as the display source.
+
+## Rule 16.3 — English is default; structure for more languages.
+
+English is the default/fallback locale. Hindi is the first additional language; Marathi follows. New locales are added by adding resources, never by changing code.
+
+## Rule 16.4 — Do not auto-translate clinical / entered data.
+
+Human-entered content (patient names, notes, complaints, treatment notes) is stored and shown exactly as entered. V1 must not machine-translate clinical data.
+
+## Rule 16.5 — Templates are localization-ready.
+
+WhatsApp and notification templates must support per-locale variants with English fallback. Do not hardcode message bodies in a single language.
+
+---
+
+# 17. Final Operating Principle
 
 When in doubt:
 
