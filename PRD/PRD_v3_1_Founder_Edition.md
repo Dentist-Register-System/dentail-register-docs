@@ -852,6 +852,29 @@ All user-facing text must come from translation resources, not literals in code:
 
 ---
 
+# 40. Design & UX Philosophy
+
+The product follows a formal, product-agnostic **Design System & UX Philosophy** (see the
+`Design/` documentation set). It is the foundation for all UI work, across web and (future)
+native iOS/Android.
+
+- **Feel:** modern, clean, fast, calm, professional, premium — a **Linear × Stripe** aesthetic.
+  Neutral-forward; **color communicates state and action, not decoration** (calm indigo accent).
+- **Whitespace over separators;** hierarchy via spacing, typography, and layout — not visual chrome.
+  Avoid enterprise/ERP and legacy-software aesthetics, excessive borders, dense layouts, clutter.
+- **Mobile-first:** UX is decided mobile-first; desktop is derived from mobile workflows.
+- **Themes are first-class:** Light, Dark, and Follow-System; **dark mode is a primary target.**
+  Semantic design tokens only — **no hardcoded colors.**
+- **Accessibility is built-in** (WCAG 2.1 AA): contrast, keyboard, ≥44px touch targets,
+  responsive, readable.
+- **Cross-platform consistency:** identical terminology, visual identity, navigation concepts,
+  and component behavior; platform-native patterns may vary.
+
+**Sequencing:** the design-system foundation must be implemented before further feature screens.
+Details: `Design/01–05` and the Phase-0 implementation plan.
+
+---
+
 # Closing Statement
 
 ***This product is not attempting to reinvent healthcare software. It is attempting to solve a narrow but extremely painful operational problem. If successful, clinics should feel that operational coordination became dramatically easier while requiring minimal behavioral change from doctors, assistants, and patients.***

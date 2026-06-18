@@ -744,7 +744,45 @@ WhatsApp and notification templates must support per-locale variants with Englis
 
 ---
 
-# 17. Final Operating Principle
+# 17. UI & Design System Rules
+
+## Rule 17.1 — Follow the design system.
+
+All UI must follow the `Design/` system (philosophy, tokens, components, theme, cross-platform).
+Do not invent ad-hoc styling, one-off components, or local design decisions.
+
+## Rule 17.2 — Semantic tokens only; no hardcoded colors.
+
+Use semantic design tokens for color, spacing, radius, elevation, and motion. Never hardcode
+color values or raw color classes in components.
+
+## Rule 17.3 — Both themes are mandatory.
+
+Every component must be designed and verified in Light and Dark (Follow-System supported). Dark
+mode is a primary target, not an afterthought. Verify AA contrast in both themes.
+
+## Rule 17.4 — Mobile-first.
+
+Design the smallest viewport first; derive desktop. Touch targets ≥ 44px; responsive by default.
+
+## Rule 17.5 — Accessibility is built-in.
+
+WCAG 2.1 AA: keyboard navigation + visible focus, contrast, touch targets, readable type, no
+color-only meaning, honor reduced-motion and system theme.
+
+## Rule 17.6 — Cross-platform consistency.
+
+Keep terminology, visual identity, navigation concepts, and component behavior identical across
+web/iOS/Android; only platform-native patterns may vary.
+
+## Rule 17.7 — Foundation before screens.
+
+The design-system foundation must be implemented before building further feature screens. Do not
+accumulate UI before the token/theme/component foundation is in place.
+
+---
+
+# 18. Final Operating Principle
 
 When in doubt:
 
