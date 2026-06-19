@@ -746,11 +746,36 @@ WhatsApp and notification templates must support per-locale variants with Englis
 
 # 17. UI & Design System Rules
 
-> **Design language changed (2026-06-18):** the product pivoted from **Linear × Stripe** to **Material 3** (pastel tonal surfaces, soft elevation, 12–16px radius, Roboto, Material Symbols, indigo usable as fills/gradients). Recorded decision: `docs/specs/2026-06-18-ui-redesign-m3-design.md` (interim authoritative reference). These rules and `Design/01–05` are being rewritten to M3 as part of that work. The token-discipline / both-themes / mobile-first / a11y rules below still hold — only the *aesthetic* changed.
+## Rule 17.0 — PERMANENT UI rule (the design language is fixed).
+
+**All future UI work follows the established Register Design System and visual benchmark.** Do NOT
+introduce new visual styles, layouts, spacing systems, typography systems, color systems, or
+navigation patterns unless the user explicitly approves.
+
+The design language (non-negotiable): **mobile-first UX · Material 3 inspired · premium SaaS
+aesthetic · Soft Purple (light) / Dark Purple (dark) · Light/Dark/System themes · consistent tokens
+across web & mobile · large confident typography · generous spacing/whitespace · strong visual
+hierarchy · rounded cards/surfaces · prefer drawers/sheets/cards/bottom-navigation over dense
+forms/tables · calm, modern, premium components · composition & hierarchy over decoration.** Avoid
+ERP / admin-template / CRUD-generator / legacy-healthcare aesthetics.
+
+**Before implementing ANY new screen:** (1) reuse existing **design tokens**; (2) reuse existing
+**components**; (3) match the **visual benchmark** (the approved mockups + the live `/design-system`
+showcase); (4) stay consistent with previously-approved screens. When uncertain, optimize for
+*"looks like a premium modern SaaS product"*, not *"looks like a functional internal tool."*
+
+**Central framework — no per-page CSS.** The frontend has ONE stylesheet (`src/app/globals.css`,
+the semantic-token source for both themes) + `src/components/ui/*` (M3 components) +
+`src/components/shell/app-shell.tsx` (nav rail web / bottom nav mobile + app bar) +
+`src/components/layout/*` page templates (`PageContainer`, `PageHeader`, `ListPageTemplate`). A new
+screen = `AppShell › Template › components` and **auto-inherits** the design language. Never write
+per-page custom CSS, `.module.css`, styled-jsx, or one-off color/spacing — compose tokens +
+components + templates. Authoritative spec: `docs/specs/2026-06-18-ui-redesign-m3-design.md`
+(`Design/01–05` are being rewritten to this M3 language).
 
 ## Rule 17.1 — Follow the design system.
 
-All UI must follow the `Design/` system (philosophy, tokens, components, theme, cross-platform).
+All UI must follow the Register Design System (philosophy, tokens, components, theme, cross-platform).
 Do not invent ad-hoc styling, one-off components, or local design decisions.
 
 ## Rule 17.2 — Semantic tokens only; no hardcoded colors.
