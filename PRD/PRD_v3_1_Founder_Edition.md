@@ -149,6 +149,16 @@ Responsibilities:
 
 ---
 
+# 6.1 Clinic Profile & Manual Address (V1)
+
+Each clinic captures a **structured, manual postal address** as part of clinic setup. During owner onboarding (creating a new clinic), a clinic address is **mandatory** — onboarding cannot complete without it. The owner/practice-manager can edit it later from the clinic profile/settings.
+
+Fields: Address Line 1 (required), Address Line 2, Landmark, Area/Locality (required), City (required), State (required), PIN Code (required, 6-digit Indian PIN), Google Maps Link (optional). On save, the system generates and stores a clean **formatted address** string (optional blank fields skipped — no empty lines/labels).
+
+This address is used later in automatic **WhatsApp appointment confirmations** (clinic name + formatted address + optional directions link). 
+
+V1 is deliberately manual and dependency-free: **no Google Maps/Places, no geocoding, no autocomplete, no embedded maps, no location picker, no third-party location provider.** The value is a clean address + optional directions link in future confirmations — not smart geocoding. (See `docs/specs/2026-06-19-clinic-address-design.md`, issue #37.)
+
 # 7. Real World Workflow Today
 
 1. Patient calls.
