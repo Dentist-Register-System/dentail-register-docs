@@ -37,6 +37,9 @@ System-generated from availability windows.
 ## Edited By
 Users do not directly edit slots. They modify availability or create appointment/request records that affect slot state.
 
+## V1 Implementation Note (SP3.1 / SP3.2)
+Slots are **virtual** in V1: computed on-read from availability windows minus blocks (slot size + capacity from clinic settings) — there is **no slot row** until a slot is first booked. A physical `slot_beta` row is **lazy-materialized** on first booking/request (SP3.2), at which point it carries capacity/occupancy and is the atomic-capacity lock target. SP3.1 only computes/derives slots (occupancy always 0). See `docs/specs/2026-06-19-sp3-1-availability-slot-generation-design.md` (issue #43).
+
 ## Visibility
 Visible to assistants and doctors.
 
