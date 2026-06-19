@@ -16,6 +16,8 @@ Different clinics operate differently. Some clinics allow multiple bookings per 
 - WhatsApp enabled status
 - Google Calendar enabled status
 
+> Note: the clinic's **postal address** (structured fields + generated `formatted_address` + optional `google_maps_url`) lives on the **Clinic** entity (see `01-clinic.md`), **not** in Clinic Settings. Settings hold operational/behavioral configuration; the address is clinic profile data.
+
 ## Relationships
 - Belongs to clinic
 - Influences slots

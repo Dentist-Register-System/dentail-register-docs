@@ -11,7 +11,7 @@ The product is built around clinic-level coordination. Doctors, assistants, pati
 - Clinic phone number
 - Clinic WhatsApp number
 - Clinic operating hours
-- Clinic address, if needed
+- **Clinic address (structured, manual — V1):** `address_line_1` (required), `address_line_2`, `landmark`, `area` (required), `city` (required), `state` (required), `pin_code` (required, 6-digit Indian PIN), `google_maps_url` (optional), and a generated **`formatted_address`** string. Captured (required) during owner onboarding, editable later from the clinic profile/settings. Used later in patient WhatsApp appointment confirmations. **No maps/geocoding/3rd-party location provider in V1** (see `docs/specs/2026-06-19-clinic-address-design.md`, issue #37).
 - Clinic-level configuration
 - Default clinic language / locale (English default)
 - Active/inactive status
