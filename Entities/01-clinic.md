@@ -7,11 +7,13 @@ A Clinic represents the operational unit using the system. In V1, the clinic is 
 The product is built around clinic-level coordination. Doctors, assistants, patients, schedules, and appointments all exist within the context of a clinic. Clinic boundaries determine visibility, permissions, settings, and operational history.
 
 ## Core Information It Holds
-- Clinic name
-- Clinic phone number
-- Clinic WhatsApp number
+- Clinic name (editable from the clinic profile)
+- Clinic phone number (**required** — primary contact; enforced at onboarding and in the profile)
+- Clinic WhatsApp number (optional; may differ from the phone number)
+- Clinic email address (`email`, optional)
 - Clinic operating hours
 - **Clinic address (structured, manual — V1):** `address_line_1` (required), `address_line_2`, `landmark`, `area` (required), `city` (required), `state` (required), `pin_code` (required, 6-digit Indian PIN), `google_maps_url` (optional), and a generated **`formatted_address`** string. Captured (required) during owner onboarding, editable later from the clinic profile/settings. Used later in patient WhatsApp appointment confirmations. **No maps/geocoding/3rd-party location provider in V1** (see `docs/specs/2026-06-19-clinic-address-design.md`, issue #37).
+- **Address Preview & Profile Completeness (V1):** owners can preview how the clinic appears to patients (name + `formatted_address` + optional directions link) and see an informational completeness checklist (name, address, phone, WhatsApp, email). Informational only — never blocks (see `docs/specs/2026-06-19-clinic-contact-preview-completeness-design.md`, issue #39).
 - Clinic-level configuration
 - Default clinic language / locale (English default)
 - Active/inactive status

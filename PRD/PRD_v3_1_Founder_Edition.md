@@ -159,6 +159,16 @@ This address is used later in automatic **WhatsApp appointment confirmations** (
 
 V1 is deliberately manual and dependency-free: **no Google Maps/Places, no geocoding, no autocomplete, no embedded maps, no location picker, no third-party location provider.** The value is a clean address + optional directions link in future confirmations — not smart geocoding. (See `docs/specs/2026-06-19-clinic-address-design.md`, issue #37.)
 
+## 6.2 Clinic Contact Details, Address Preview & Profile Completeness (V1)
+
+The clinic profile also captures **contact details** and helps owners keep their information complete and accurate:
+
+- **Contact details:** Clinic **phone number** (required — primary contact), **WhatsApp number** (optional, may differ from phone), and **email** (optional). Phone is required both during owner onboarding and in the clinic profile. The clinic name is editable from the profile.
+- **Address Preview:** a read-only view showing exactly how the clinic will appear to patients — clinic name + formatted address + optional directions link — so owners can verify future patient-facing communications (appointment confirmations/reminders) will be correct. The communications themselves are not built here.
+- **Profile Completeness:** an informational checklist (clinic name, address, phone, WhatsApp, email) with a completion percentage that guides owners to fill missing fields. It never blocks the app or adds requirements beyond onboarding.
+
+Edits to clinic contact details are restricted to owner/practice-manager (existing role pattern); all clinic members may view the preview and completeness indicators. A future **sticky in-app notification** will actively prompt owners to complete missing details once the in-app notifications system exists (issue #40). (See `docs/specs/2026-06-19-clinic-contact-preview-completeness-design.md`, issue #39.)
+
 # 7. Real World Workflow Today
 
 1. Patient calls.
