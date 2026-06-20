@@ -33,6 +33,10 @@ The product is built around clinic-level coordination. Doctors, assistants, pati
 ## Lifecycle / States
 A clinic can be active or inactive. V1 does not require multi-branch support.
 
+## Clinic Data vs. Owner/Doctor Data
+
+Clinic data (name, phone, address, settings) is **distinct from the owner's doctor profile**. When the clinic creator is also a practicing doctor, they create a separate `doctor_beta` record for themselves as a self-service step after clinic setup. The clinic's name and phone number are **not** automatically copied into the doctor profile — the owner fills their doctor profile independently. See `Entities/04-doctor.md` and `docs/specs/2026-06-20-owner-doctor-self-profile-nav-split-design.md`.
+
 ## Created By
 Clinic owner or system onboarding flow.
 
