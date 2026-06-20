@@ -691,4 +691,25 @@ Design decisions (navigation pattern, card columns, table vs. card layout, butto
 
 ---
 
+## B.20 Success Card
+
+**Purpose:** must-acknowledge confirmation shown after important create/save/decide actions (request sent, approved, declined, schedule saved, profile created, etc.). Replaces silent dialog-close feedback — the app has no toasts for significant outcomes. See `docs/specs/2026-06-20-success-cards-design.md` (#61).
+
+**Anatomy:** `--overlay` scrim + card panel + **✓ badge** (`bg-success/10` fill · `text-success` icon/ring — reuses the existing `--success` token, no new token) + **title** (`DialogTitle`, semibold, `title` scale) + **detail rows** (plain-language label + value pairs; rows with empty values are omitted) + **Dismiss button** (primary, full-width on mobile / fixed-width on desktop) + optional **deep-link action** (secondary, shown only when a target route exists for the created/updated entity).
+
+**Interaction:**
+- Must-acknowledge — does not auto-dismiss. User must tap/click Dismiss (or the deep-link action) to proceed.
+- If a new success is triggered while one is already visible, the new card replaces the old one.
+- No stacking, no queue; only one card is ever shown at a time.
+
+**Variants:** Dismiss-only (default, V1) · with deep-link action (when a target route exists).
+
+**Both themes:** panel uses `--card` / `--card-foreground`; scrim uses `--overlay`; badge uses `--success` / `--success-foreground` tint; no hardcoded colors.
+
+**Accessibility:** `role="dialog"`, `aria-modal="true"`, `aria-labelledby` pointing to the `DialogTitle`. Focus is trapped inside; Dismiss receives focus on open. ESC is not a dismiss shortcut (must-acknowledge). Returns focus to trigger element on close.
+
+**Mobile vs. desktop:** bottom-sheet layout on mobile (slides up, rounded top corners, `--overlay` scrim). Centered fixed-width dialog (max-width `sm`, 400px) on desktop. Detail rows and action buttons stack vertically on mobile; on desktop the optional deep-link action sits beside Dismiss in the footer row.
+
+---
+
 *End of Design System Specification — 02-design-system.md*
