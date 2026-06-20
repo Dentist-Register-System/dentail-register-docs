@@ -720,6 +720,7 @@ Claude Code must never:
 - Collapse My Schedule and Clinic Schedules into a single screen or use a dropdown to switch between them (Rule 18.2).
 - Use a dropdown (`<select>`) for doctor selection in Clinic Schedules — use the M3 DoctorPicker (bottom-sheet + search) instead (Rule 18.3).
 - Implement multi-field entity creation (clinic, doctor profile) as a single dense form or plain dialog — use the guided one-question wizard (Rule 18.4).
+- Close a dialog/sheet silently after an important create/save/approve/reject action without showing a success card (Rule 18.5).
 
 ---
 
@@ -847,6 +848,12 @@ Rules:
 - **Every card carries a reassurance line** (circled-i + italic muted text, i18n-keyed).
 
 Reference: `docs/specs/2026-06-20-guided-wizard-design.md` (#50).
+
+## Rule 18.5 — Important actions confirm with a success card; do not rely on silent dialog-close.
+
+Any action that creates, saves, approves, or rejects a significant entity (patient, appointment request, schedule, profile, clinic settings, etc.) must close with a **Success Card** (B.20 in `Design/02-design-system.md`) that states what happened and shows the key details. The card is must-acknowledge (no auto-dismiss). Do not treat the silent close of a dialog or sheet as sufficient feedback for these actions.
+
+Reference: `docs/specs/2026-06-20-success-cards-design.md` (#61).
 
 ---
 
