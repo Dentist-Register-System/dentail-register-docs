@@ -921,6 +921,23 @@ Details: `Design/01–05` and the Phase-0 implementation plan.
 
 ---
 
+# 41. Pre-Launch UX Trust, Safety & Theming (V1 — tracked backlog)
+
+A set of **launch-critical** UX features (not polish) directly address the core adoption risk: doctors and owners must trust that assistants + software won't let important things slip. Each is filed as a CRITICAL backlog item (design interactively → spec → build when picked up); **no AI takes actions autonomously** (per §31).
+
+1. **Appointment booking checklist** (#59) — booking is a guided checklist (patient → doctor → slot → reason → preview → send), never a giant form; missing steps shown in plain English; no silent incomplete submit.
+2. **Confirmation preview before important actions** (#60) — book/cancel/reschedule/send/no-show show a readable, human-language preview with back/edit before final confirm.
+3. **Success cards (not disappearing toasts)** (#61) — important actions end in a persistent M3 success card stating what happened + key details + actions.
+4. **Clinic Health / Needs Attention card** (#62) — Home surfaces deterministic operational state (pending requests, overdue follow-ups, missing schedules, unsent confirmations); reassuring when healthy, actionable (deep-linked) when not.
+5. **Missing-information detection** (#63) — deterministic warning chips/cards on patient/appointment pages with jump-to-fix; no AI.
+6. **AI summary layer** (#64) — AI-assisted Home daily brief + on-demand patient summary; summarizes known facts only, clearly labeled AI, manual patient trigger, never auto-acts (§31).
+
+**Theming & color refresh** (#65) — a comfort/polish initiative (NOT a redesign): softer light backgrounds, less-harsh dark mode, calmer contrast (Linear/Notion/GitHub/Apple direction) for all-day use; preserve layouts, hierarchy, spacing, typography, and **semantic token names** (refine values only); phased with mockup approval; investigate next-themes/Tailwind tooling first.
+
+These reflect the product principle that **reducing mistakes + visibly confirming outcomes** is what earns clinic trust. See each issue for full rationale, UX, acceptance criteria, and implementation notes.
+
+---
+
 # Closing Statement
 
 ***This product is not attempting to reinvent healthcare software. It is attempting to solve a narrow but extremely painful operational problem. If successful, clinics should feel that operational coordination became dramatically easier while requiring minimal behavioral change from doctors, assistants, and patients.***
