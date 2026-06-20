@@ -719,6 +719,7 @@ Claude Code must never:
 - Build around implementation convenience when it violates clinic reality.
 - Collapse My Schedule and Clinic Schedules into a single screen or use a dropdown to switch between them (Rule 18.2).
 - Use a dropdown (`<select>`) for doctor selection in Clinic Schedules — use the M3 DoctorPicker (bottom-sheet + search) instead (Rule 18.3).
+- Implement multi-field entity creation (clinic, doctor profile) as a single dense form or plain dialog — use the guided one-question wizard (Rule 18.4).
 
 ---
 
@@ -833,6 +834,19 @@ When the user must select from a list of entities (doctors, patients, templates,
 - **Use a standard dropdown only for 2–4 trivial, static options** (e.g., status filter, theme preference) where search and bottom-sheet add no value.
 
 Do not implement a `<select>` or dropdown for doctor selection in Clinic Schedules. The DoctorPicker pattern (bottom-sheet + search) is the required component. See `docs/specs/2026-06-20-owner-doctor-self-profile-nav-split-design.md` §4.4, issue #49.
+
+## Rule 18.4 — Multi-field creation flows use the guided one-question wizard.
+
+Any flow that collects several fields to create a core entity (clinic, doctor profile, etc.) must use the **guided wizard pattern** (B.19 in `Design/02-design-system.md`) rather than a single dense form or a plain multi-field dialog.
+
+Rules:
+- **One question per card.** Do not dump all fields onto one screen.
+- **Group cohesive fields into a single step.** Naturally related fields (e.g., the full postal address) belong in one card — do not fragment them into one card per field.
+- **Required steps gate Next** (disabled until valid); **optional steps show Skip**.
+- **Last step submits** directly ("Create …") — no separate review screen.
+- **Every card carries a reassurance line** (circled-i + italic muted text, i18n-keyed).
+
+Reference: `docs/specs/2026-06-20-guided-wizard-design.md` (#50).
 
 ---
 
