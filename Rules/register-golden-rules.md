@@ -717,6 +717,8 @@ Claude Code must never:
 - Store secrets in code.
 - Mark features complete without relevant P0 tests.
 - Build around implementation convenience when it violates clinic reality.
+- Collapse My Schedule and Clinic Schedules into a single screen or use a dropdown to switch between them (Rule 18.2).
+- Use a dropdown (`<select>`) for doctor selection in Clinic Schedules — use the M3 DoctorPicker (bottom-sheet + search) instead (Rule 18.3).
 
 ---
 
@@ -809,7 +811,32 @@ accumulate UI before the token/theme/component foundation is in place.
 
 ---
 
-# 18. Final Operating Principle
+# 18. Product & Navigation Rules (Owner-Doctor, Schedules, UI Selection)
+
+## Rule 18.1 — Owner-doctor is the default happy path.
+
+The clinic creator is most commonly a practicing doctor. The system must treat the **owner-doctor** scenario — where the owner also has a linked doctor profile — as the default, well-supported path, not an edge case. After creating a clinic, the owner should be able to create their own doctor profile immediately (self-service, no invite, immediately active). Onboarding, navigation, and empty states must reflect this expectation.
+
+## Rule 18.2 — My Schedule and Clinic Schedules are separate navigable concepts.
+
+**My Schedule** shows only the logged-in user's own appointments and availability. It requires a linked doctor profile (`doctor_id`) and never presents a doctor picker.
+
+**Clinic Schedules** is the admin-level multi-doctor view. It uses an M3 searchable / bottom-sheet / command-style DoctorPicker to switch between doctors.
+
+Claude Code must not collapse these into a single screen, use a dropdown to switch between "self" and "others," or gate one view behind the other. They are separate navigation entries, separately routed, with distinct purposes.
+
+## Rule 18.3 — Prefer M3 searchable / bottom-sheet / command-style selection over dropdowns.
+
+When the user must select from a list of entities (doctors, patients, templates, etc.):
+
+- **Prefer** M3 bottom-sheet search, command-palette-style selection, or segmented controls for 5+ items.
+- **Use a standard dropdown only for 2–4 trivial, static options** (e.g., status filter, theme preference) where search and bottom-sheet add no value.
+
+Do not implement a `<select>` or dropdown for doctor selection in Clinic Schedules. The DoctorPicker pattern (bottom-sheet + search) is the required component. See `docs/specs/2026-06-20-owner-doctor-self-profile-nav-split-design.md` §4.4, issue #49.
+
+---
+
+# 19. Final Operating Principle
 
 When in doubt:
 

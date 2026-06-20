@@ -140,6 +140,8 @@ Responsibilities:
 - manage staff
 - oversee operations
 
+> **Owner-doctor default (as-built, issue #49):** The clinic creator is most commonly also a practicing doctor — the **owner-doctor** — and this is the **default happy path**. After creating the clinic, the owner creates their **own doctor profile** as a separate, self-service step (no invite required, immediately active, not derived from clinic data). Clinic data and doctor data are deliberately kept distinct. See `docs/specs/2026-06-20-owner-doctor-self-profile-nav-split-design.md`.
+
 ## Practice Manager
 
 Responsibilities:
@@ -255,7 +257,20 @@ Warn the assistant. Never block creation. Humans make the final decision.
 
 # 11. Doctor Lifecycle
 
-## Invite
+## Self-Profile (owner-doctor path — default happy path)
+
+When the clinic creator is also a practicing doctor, they create their **own doctor profile** directly after clinic setup. This is a self-service action — no invite is needed, the profile is immediately `Active`, and it is a **separate record from the clinic** (clinic name/phone are not copied into the doctor profile).
+
+Fields:
+- name
+- phone
+- specialty
+
+`Status: Active` — immediately usable.
+
+> One doctor profile per user per clinic (duplicate attempts return 409). Requires the user to be a clinic member. See `docs/specs/2026-06-20-owner-doctor-self-profile-nav-split-design.md` §3.1, issue #49.
+
+## Invite (non-owner doctor path)
 
 ~~Assistant creates doctor.~~
 
@@ -269,7 +284,7 @@ Fields:
 Doctor receives invite.
 `Status: Invited`
 
-## Activation
+## Activation (invite path)
 
 1. Doctor creates account.
 2. Doctor submits availability.
@@ -730,6 +745,15 @@ Dashboard contains:
 - today's appointments
 - pending approvals
 - daily AI brief
+
+## My Schedule vs Clinic Schedules
+
+**My Schedule** and **Clinic Schedules** are **separate navigable concepts** (as-built, issue #49):
+
+- **My Schedule** — the logged-in user's own schedule. Only available when the user has a linked doctor profile (`doctor_id`). No doctor picker — it is always the current user's own appointments and availability. Navigation destination for owner-doctors checking their personal calendar.
+- **Clinic Schedules** — the full clinic-wide schedule view. Admin/owner experience. Uses an M3 searchable / bottom-sheet / command-style **DoctorPicker** to switch between doctors. Accessible to users with clinic admin rights regardless of whether they personally have a doctor profile.
+
+These two concepts must never be collapsed into a single screen controlled by a dropdown. The navigation entry point and the picker pattern are the primary differentiators. See `docs/specs/2026-06-20-owner-doctor-self-profile-nav-split-design.md` §4.3, issue #49.
 
 ---
 
