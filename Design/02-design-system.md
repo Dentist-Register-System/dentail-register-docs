@@ -712,4 +712,27 @@ Design decisions (navigation pattern, card columns, table vs. card layout, butto
 
 ---
 
+## B.21 Settings & Profile Page
+
+**Purpose:** a single `/settings` destination where users view and edit their own identity (Profile pane) and clinic details (Clinic pane). Replaces the scattered entry points previously found on the home card (clinic edit) and home banner (create-profile CTA). See `Mockups/mockup_settings_profile.png` and `docs/specs/2026-06-20-settings-profile-design.md` (#35).
+
+**Route & shell:** `/settings` — a two-pane layout: a **sub-nav** on the left (desktop) that lists sections (**Profile** · **Clinic**); the active item is rendered as a soft `primary-container` pill. On mobile the sub-nav becomes a top list, followed by the section content. Page title is "Settings", subtitle "Manage your clinic and account". A breadcrumb ("Settings › Profile" / "Settings › Clinic") appears above the active pane content on both breakpoints.
+
+**Profile pane:**
+- **Identity header** — initials avatar (real upload deferred → #70), display name, role chip, specialization, email, phone.
+- **Personal Information card** — an Edit action toggles an inline edit form in place (no dialog/drawer). Editable fields: Full Name, Specialization, License Number. Read-only rows: Email, Phone, Role, Joined date. On save → **Success Card** (B.20) "Profile updated".
+- **No-doctor-profile state** — when the user has no linked doctor record (`doctor_id` null), doctor-specific rows (Specialization, License Number) are hidden and a **"Create your doctor profile"** CTA is shown; this reuses the full-screen guided wizard (B.19).
+
+**Clinic pane:** hosts the existing clinic-details edit form (relocated from `EditClinicDetailsDialog`). Editable by owner/practice\_manager only; all other roles see read-only clinic details. On save → Success Card "Clinic details saved".
+
+**Navigation wiring:** the app rail gains a **Settings (gear)** destination visible to all roles. The home clinic-card **Edit** button and the create-profile banner CTA both now navigate into `/settings` (Clinic and Profile panes respectively); banner dismiss behaviour is preserved.
+
+**Both themes:** uses `--primary-container` (active sub-nav pill), `--card`, `--muted-foreground`, `--border` — no hardcoded colors.
+
+**Accessibility:** Edit toggle moves focus to the first editable field; form controls are labelled; breadcrumb uses `aria-label="breadcrumb"`; sub-nav items carry `aria-current="page"` for the active section; both themes WCAG AA.
+
+**Mobile vs. desktop:** mobile — sub-nav list at top of page, content below; stacked edit-form buttons. Desktop — left sub-nav rail + right content area with the active-pill indicator.
+
+---
+
 *End of Design System Specification — 02-design-system.md*
