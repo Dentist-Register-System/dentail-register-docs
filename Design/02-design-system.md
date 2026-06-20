@@ -1,7 +1,7 @@
 # Design System Specification
 
 **Status:** Draft for review
-**Date:** 2026-06-18
+**Date:** 2026-06-20 (palette updated — theme refresh #65)
 **Scope:** Product-agnostic, reusable SaaS design system — web + iOS + Android.
 
 ---
@@ -37,26 +37,62 @@ Implemented as CSS custom properties (`--token-name`). Tailwind utilities read t
 
 ## A.2 Color Tokens
 
-### Indigo reservation rule
+### Soft-Purple reservation rule
 
-Indigo (`--primary`) is reserved exclusively for: primary actions, active/selected state, focus rings, and links. It must never appear as a background fill or decorative element. The canvas stays neutral.
+Soft-Purple (`--primary`) is reserved exclusively for: primary actions, active/selected state, focus rings, and links. It must never appear as a background fill or decorative element. The canvas stays neutral (off-white in light, deep charcoal-lavender in dark).
+
+### Palette: "Calm Soft-Purple" (updated in theme refresh #65)
+
+The palette was refreshed in #65 to replace the previous electric-violet primary and harsh canvas with calmer, warmer values — closer to Linear/Notion/Apple. Direction: calm, premium, all-day clinical use. Token **names** are unchanged; only **values** changed. See `docs/specs/2026-06-20-theme-refresh-design.md` for rationale and the full before/after table.
+
+**Light theme (`:root`) headline values:**
+
+| Token | Value | Note |
+|---|---|---|
+| `--background` | `#F4F4F6` | Neutral calm canvas — not lavender; purple lives in the rail/chrome |
+| `--card` | `#FFFFFF` | White — now visibly lifts off the dimmer canvas |
+| `--primary` | `#6750A4` | M3 Soft Purple — calm/premium, not electric |
+| `--primary-container` / `--secondary` / `--accent` / `--sidebar-accent` | `#EADDFF` | Warm Lilac container (chips, app-rail active pill) |
+| `--on-primary-container` / `--secondary-foreground` / `--accent-foreground` | `#21005D` | Dark purple on Lilac |
+| `--border` | `#ECE9F3` | Light hairline — cards read as shadow-elevated, not boxed |
+| `--sidebar` | `#EFEAF7` | Lavender rail (kept/loved) |
+| `--ring` / `--sidebar-primary` / `--sidebar-ring` | `#6750A4` | Match primary |
+| `--muted` | `#ECEAF3` | Softer fills |
+| `--input` | `#C4C1D1` | Softer input outline |
+| `--outline` | `#7965AF` | Calmer outline |
+| `--hero-from` / `--hero-to` | `#EADDFF` / `#F6F2FF` | Soft hero gradient |
+
+**Dark theme (`.dark`) headline values:**
+
+| Token | Value | Note |
+|---|---|---|
+| `--background` | `#17151E` | Deep charcoal-lavender, off near-black (less harsh) |
+| `--card` / `--popover` | `#211F2A` | Lifted for surface separation |
+| `--primary` / `--ring` / `--sidebar-primary` / `--sidebar-ring` | `#CFBCFF` | Soft lilac primary |
+| `--primary-container` / `--secondary` / `--accent` / `--sidebar-accent` | `#4A3F66` | Calmer (less saturated) container |
+| `--border` / `--sidebar-border` | `#322F3B` | Subtler hairline |
+| `--sidebar` | `#1E1B28` | Rail |
+| `--muted` | `#28262F` | — |
+| `--surface-variant` | `#2A2735` | — |
+
+**Accessibility:** WCAG AA preserved in both themes (white on `#6750A4` ≈ 4.9:1; text on Lilac high-contrast). State colors (`--destructive`, `--success`, `--warning`, `--info`) are unchanged.
 
 ### Semantic color tokens
 
-Each token listed below has a paired `-foreground` token for text/icon drawn on that surface. Light/dark intent is described in the "Role" column; per-theme values (oklch/hsl coordinates) are defined in doc 03 (Theme Specification).
+Each token listed below has a paired `-foreground` token for text/icon drawn on that surface. Light/dark values are defined above and in `docs/specs/2026-06-20-theme-refresh-design.md` (#65); per-theme CSS lives in `src/app/globals.css`.
 
 | Token | Foreground pair | Role |
 |---|---|---|
-| `--background` | `--foreground` | App canvas background / primary text. Light: near-white `#FFFFFF` / ink `#0B0B0F`. Dark: `#0B0C0E` / `#F4F5F7`. |
-| `--card` | `--card-foreground` | Card and panel surfaces. Light: `#FFFFFF` on faint `#FAFAFB` app bg. Dark: `#141517` on `#0B0C0E`. |
+| `--background` | `--foreground` | App canvas background / primary text. Light: `#F4F4F6` / ink. Dark: `#17151E` / near-white. |
+| `--card` | `--card-foreground` | Card and panel surfaces. Light: `#FFFFFF` on dimmer `#F4F4F6` canvas. Dark: `#211F2A` on `#17151E`. |
 | `--popover` | `--popover-foreground` | Popover/dropdown surfaces. Shares card values by default; overridable. |
 | `--muted` | `--muted-foreground` | Subtle fills and secondary text. `--muted-foreground` must still pass AA contrast against `--muted`. |
-| `--border` | — | Hairline separators. Used sparingly — prefer whitespace to establish grouping. |
+| `--border` | — | Hairline separators. Light: `#ECE9F3` (soft). Dark: `#322F3B` (subtle). Used sparingly — prefer whitespace to establish grouping. |
 | `--input` | — | Form field border. Slightly more prominent than `--border`. |
-| `--ring` | — | Focus ring. Indigo in both themes; always visible. |
-| `--primary` | `--primary-foreground` | **Calm indigo** — primary actions. Light ≈ `#4F46E5` (indigo-600). Dark ≈ `#6366F1` (indigo-500). Foreground = white. |
-| `--secondary` | `--secondary-foreground` | Neutral secondary buttons and fills. |
-| `--accent` | `--accent-foreground` | Subtle hover/selected background tint. Neutral — not the brand indigo as a fill. |
+| `--ring` | — | Focus ring. Soft-Purple (`#6750A4` light / `#CFBCFF` dark); always visible. |
+| `--primary` | `--primary-foreground` | **Calm Soft-Purple** — primary actions. Light `#6750A4` (M3 Purple). Dark `#CFBCFF` (soft lilac). Foreground = white / dark-purple respectively. |
+| `--secondary` | `--secondary-foreground` | Neutral secondary buttons and fills. Shares Lilac container value (`#EADDFF` light / `#4A3F66` dark). |
+| `--accent` | `--accent-foreground` | Subtle hover/selected background tint. Uses Lilac container — not a decorative fill. |
 | `--destructive` | `--destructive-foreground` | Red. Destructive actions, error states, deletion. |
 | `--success` | `--success-foreground` | Green. Positive confirmations, completed states. |
 | `--warning` | `--warning-foreground` | Amber. Caution, degraded states, non-blocking issues. |
@@ -110,9 +146,9 @@ All sizes in px (rem at 16px base). Default UI text is `body` (14px) — matchin
 | `1` | 4 | Icon gaps, micro-padding |
 | `2` | 8 | Control inline padding (tight) |
 | `3` | 12 | Control padding (default) |
-| `4` | 16 | Card padding (compact), stack gap (default) |
-| `5` | 20 | — |
-| `6` | 24 | Card padding (default) |
+| `4` | 16 | Card padding (sm breakpoint / compact), stack gap (default) |
+| `5` | 20 | **Card padding default** (`--card-spacing`, updated in theme refresh #65) |
+| `6` | 24 | Section-level padding |
 | `8` | 32 | Section gap (tight) |
 | `10` | 40 | — |
 | `12` | 48 | Section gap (default) |
@@ -126,7 +162,7 @@ All sizes in px (rem at 16px base). Default UI text is `body` (14px) — matchin
 |---|---|
 | Control padding (inputs, buttons) | `2`–`3` |
 | Stack / list gap | `2`–`4` |
-| Card padding | `4`–`6` |
+| Card padding | `5` (default, 20px via `--card-spacing`) · `4` (sm breakpoint) |
 | Section gap | `8`–`12` |
 | Page gutters | `4` (mobile) → `6`–`8` (desktop) |
 
@@ -150,16 +186,20 @@ Style is moderate and soft — not sharp-cornered enterprise, not pill-everythin
 
 ## A.6 Elevation
 
-Prefer subtle elevation. The system uses hairline borders and soft shadows rather than heavy shadows. In dark mode, lighter surfaces (via `--card`, `--popover`) carry elevation more than shadows do.
+Prefer subtle elevation. The system uses hairline borders and soft, faint-purple-tinted shadows rather than heavy neutral shadows. In dark mode, lighter surfaces (via `--card`, `--popover`) carry elevation more than shadows do.
 
-| Level | Context | Shadow |
-|---|---|---|
-| `0` | Flat, default | None — use background color and spacing |
-| `1` | Resting cards | `--border` hairline + `0 1px 2px rgba(0,0,0,.06)` |
-| `2` | Popovers, dropdowns, menus | `0 4px 12px rgba(0,0,0,.10)` |
-| `3` | Modals, sheets | `0 12px 32px rgba(0,0,0,.18)` + `--overlay` scrim |
+**Softened elevations (updated in theme refresh #65):** shadows now use a faint purple tint (`rgba(35,30,55,…)`) and reduced opacity so cards feel lifted rather than heavy.
 
-Dark theme: rely on lighter surface tokens (`--card` at `#141517`) rather than increasing shadow opacity.
+| Level | Token | Context | Shadow |
+|---|---|---|---|
+| `0` | `--elevation-0` | Flat, default | None — use background color and spacing |
+| `1` | `--elevation-1` | Resting cards | `--border` hairline + `0 1px 2px rgba(35,30,55,.05)` |
+| `2` | `--elevation-2` | Popovers, dropdowns, menus | `0 2px 10px rgba(35,30,55,.05), 0 1px 3px rgba(35,30,55,.04)` |
+| `3` | `--elevation-3` | Drawers, raised panels | `0 6px 18px rgba(35,30,55,.08), 0 2px 6px rgba(35,30,55,.05)` |
+| `4` | `--elevation-4` | Modals, sheets | `0 10px 26px rgba(35,30,55,.10), 0 4px 10px rgba(35,30,55,.06)` |
+| `5` | `--elevation-5` | Full-screen overlays | `0 16px 36px rgba(35,30,55,.12), 0 6px 14px rgba(35,30,55,.08)` |
+
+Dark theme: rely on lighter surface tokens (`--card` at `#211F2A`) rather than increasing shadow opacity. Shadows remain intentionally faint in dark mode.
 
 ---
 
@@ -186,7 +226,7 @@ Each component entry covers: purpose, key anatomy, variants, sizes, states, both
 **Shared rules across all components:**
 - All interactive states use semantic tokens — no hardcoded colors.
 - All copy via `t()` — no hardcoded strings.
-- Focus ring: `--ring` (indigo), 2px solid, 2px offset, visible in both themes.
+- Focus ring: `--ring` (Soft-Purple — `#6750A4` light / `#CFBCFF` dark), 2px solid, 2px offset, visible in both themes.
 - Touch targets: minimum 44×44px on mobile.
 - Loading states prefer skeletons over spinners where content shape is known.
 
@@ -219,7 +259,7 @@ Each component entry covers: purpose, key anatomy, variants, sizes, states, both
 
 **States:** default → hover (lightened/tinted fill) → focus (`--ring`) → active (darkened fill) → disabled (reduced opacity, no pointer events) → loading (spinner replaces label, width preserved).
 
-**Both themes:** `--primary` shifts from indigo-600 (light) to indigo-500 (dark) to maintain contrast. All other variants adjust via their semantic tokens.
+**Both themes:** `--primary` is `#6750A4` (M3 Soft Purple) in light and `#CFBCFF` (soft lilac) in dark to maintain contrast. All other variants adjust via their semantic tokens.
 
 **Accessibility:** `aria-disabled` for disabled state; `aria-busy` + accessible label during loading. Minimum 44px height on mobile (`lg` size or CSS min-height override).
 
@@ -302,17 +342,21 @@ Each component entry covers: purpose, key anatomy, variants, sizes, states, both
 
 **Purpose:** group related content or actions into a visually bounded unit.
 
-**Anatomy:** card container + optional header (title + subtitle + actions) + content area + optional footer (actions or metadata).
+**Anatomy:** card container + optional header (title + subtitle + actions) + optional `CardSeparator` + content area + optional footer (actions or metadata).
 
 **Variants:** default (elevation 1), flat (elevation 0, use border), interactive/clickable (hover lifts to elevation 2), featured (larger padding, optional accent top border).
 
 **States:** default → hover (interactive variant: shadow lifts, subtle bg shift via `--accent`) → active (pressed scale on mobile) → selected (`--primary` left border or ring).
 
-**Both themes:** `--card` surface is white in light, `#141517` in dark. Shadow lightens in dark (already subtle; rely on surface color for depth).
+**Both themes:** `--card` surface is `#FFFFFF` in light, `#211F2A` in dark. Shadow uses softened purple-tinted elevations (see A.6); rely on surface color for depth in dark mode.
+
+**Spacing — `--card-spacing` (updated in theme refresh #65):** the shared card spacing token is **20px** (`--spacing(5)`), bumped from 16px for airier breathing room matching the approved mockup. This widens padding and internal gaps on every card app-wide via the `Card` primitive.
+
+**CardSeparator — inset header divider (added in theme refresh #65):** a subtle, non-edge-to-edge horizontal rule between `CardHeader` and `CardContent` on cards that have both a header and a body. Implementation: `mx-(--card-spacing) border-t border-border` — inset by the card padding so it reads as a structural element, not a full bleed line. Applied to Settings panes, profile, dashboard, and list cards with a visible header. Very subtle by design: uses the now-lighter `--border` token.
 
 **Accessibility:** if the whole card is clickable, use a single `<a>` or `<button>` wrapping the content with a descriptive `aria-label`. Avoid nested interactive elements inside a clickable card unless carefully structured.
 
-**Mobile vs. desktop:** full-width on mobile (no columns). 2–3 column grid on desktop. Padding scales from `4` (mobile) to `6` (desktop).
+**Mobile vs. desktop:** full-width on mobile (no columns). 2–3 column grid on desktop. Padding uses `--card-spacing` (20px) uniformly; `sm` breakpoint uses 16px.
 
 ---
 
@@ -603,7 +647,7 @@ All text and meaningful UI elements must meet WCAG 2.1 AA minimums. Verified in 
 - Every interactive element (buttons, inputs, links, tabs, menu items, checkboxes, radio buttons, selects, toggles, sortable headers) is reachable and operable via keyboard alone.
 - Tab order follows the visual reading order (left-to-right, top-to-bottom).
 - No keyboard traps — Tab always moves focus forward, Shift+Tab backward, ESC closes overlays and returns focus to the trigger.
-- Focus ring: `--ring` (indigo), 2px solid, 2px offset. Visible in both light and dark themes. Never suppressed globally (`:focus-visible` is acceptable; `:focus { outline: none }` without replacement is not).
+- Focus ring: `--ring` (Soft-Purple — `#6750A4` light / `#CFBCFF` dark), 2px solid, 2px offset. Visible in both light and dark themes. Never suppressed globally (`:focus-visible` is acceptable; `:focus { outline: none }` without replacement is not).
 - Arrow key navigation within compound widgets: tab bars, listboxes, menus, radio groups, sliders.
 
 ---
@@ -716,7 +760,9 @@ Design decisions (navigation pattern, card columns, table vs. card layout, butto
 
 **Purpose:** a single `/settings` destination where users view and edit their own identity (Profile pane) and clinic details (Clinic pane). Replaces the scattered entry points previously found on the home card (clinic edit) and home banner (create-profile CTA). See `Mockups/mockup_settings_profile.png` and `docs/specs/2026-06-20-settings-profile-design.md` (#35).
 
-**Route & shell:** `/settings` — a two-pane layout: a **sub-nav** on the left (desktop) that lists sections (**Profile** · **Clinic**); the active item is rendered as a soft `primary-container` pill. On mobile the sub-nav becomes a top list, followed by the section content. Page title is "Settings", subtitle "Manage your clinic and account". A breadcrumb ("Settings › Profile" / "Settings › Clinic") appears above the active pane content on both breakpoints.
+**Route & shell:** `/settings` — a three-column layout on desktop: app rail → **Settings sub-nav as its own bordered `Card` panel** (SETTINGS eyebrow + icon rows for Profile and Clinic) → active content. The sub-nav is always visible on desktop; on mobile it becomes a top list followed by the section content. Page title is "Settings", subtitle "Manage your clinic and account". A breadcrumb ("Settings › Profile" / "Settings › Clinic") appears above the active pane content on both breakpoints.
+
+**Sub-nav active treatment (updated in theme refresh #65):** the active Settings sub-nav pill uses a **paler** lavender (`bg-primary-container/55` over the card, dark-purple label/icon) — intentionally softer than the app rail's deeper Lilac (`#EADDFF`) active pill, so the two levels of navigation are visually differentiated. Real Material Symbol icons: `person` for Profile, `business` for Clinic.
 
 **Profile pane:**
 - **Identity header** — initials avatar (real upload deferred → #70), display name, role chip, specialization, email, phone.
@@ -727,7 +773,7 @@ Design decisions (navigation pattern, card columns, table vs. card layout, butto
 
 **Navigation wiring:** the app rail gains a **Settings (gear)** destination visible to all roles. The home clinic-card **Edit** button and the create-profile banner CTA both now navigate into `/settings` (Clinic and Profile panes respectively); banner dismiss behaviour is preserved.
 
-**Both themes:** uses `--primary-container` (active sub-nav pill), `--card`, `--muted-foreground`, `--border` — no hardcoded colors.
+**Both themes:** uses `--primary-container` (active sub-nav pill, paled to `/55` opacity in Settings sub-nav per theme refresh #65), `--card`, `--muted-foreground`, `--border` — no hardcoded colors.
 
 **Accessibility:** Edit toggle moves focus to the first editable field; form controls are labelled; breadcrumb uses `aria-label="breadcrumb"`; sub-nav items carry `aria-current="page"` for the active section; both themes WCAG AA.
 
