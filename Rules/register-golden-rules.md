@@ -855,6 +855,12 @@ Any action that creates, saves, approves, or rejects a significant entity (patie
 
 Reference: `docs/specs/2026-06-20-success-cards-design.md` (#61).
 
+## Rule 18.6 — All user profile and settings belong under `/settings`.
+
+The `/settings` route is the single destination for a user's own profile (identity, doctor profile, editable fields) and for clinic-details editing. Do not scatter these entry points across home cards, banners, or separate routes. The app rail must include a Settings (gear) destination visible to all roles. Any new settings section (Security, Preferences, Team, etc.) must be added as a pane within `/settings`, not as a standalone route.
+
+Reference: `docs/specs/2026-06-20-settings-profile-design.md` (#35) and design-system B.21.
+
 ---
 
 # 19. Final Operating Principle
