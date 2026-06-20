@@ -662,4 +662,33 @@ Design decisions (navigation pattern, card columns, table vs. card layout, butto
 
 ---
 
+---
+
+## B.19 Guided One-Question Wizard
+
+**Purpose:** replace dense multi-field creation forms with a calm, premium onboarding experience — one focused question at a time. Used for multi-field creation flows (clinic creation, doctor-profile creation). See `docs/specs/2026-06-20-guided-wizard-design.md` (#50) and [[Golden Rules §18]].
+
+**Anatomy:**
+- **Top progress bar** — linear fill from 0 → 100 % as the user advances.
+- **One-question card** — a single centered card per step. Each card contains: a step heading, the field(s) for that step, and a per-card reassurance line (circled-i icon + italic muted text below the field(s), above the buttons).
+- **Desktop left step-rail** — vertical stepper: completed steps show a checkmark, the current step is highlighted, upcoming steps are numbered. Hidden below `md` breakpoint.
+- **Mobile dot row** — horizontal dots: completed = filled, current = elongated, upcoming = muted. Hidden at `md`+. Both rail and dots derive from the same step model.
+- **Control row** — Back (hidden on step 1) · Skip (optional steps only) · Next (required steps, disabled until the step is valid) · Submit on the last step ("Create clinic" / "Create profile" — no separate review screen).
+
+**Grouping rule:** group naturally cohesive fields into a single step — do **not** fragment them into one card per field. Example: the full structured postal address (address\_line\_1, area, city, state, pin\_code, and optional address\_line\_2 / landmark / google\_maps\_url) is **one "Address" card**, not five separate cards.
+
+**Validation:** per-step only — trigger only the current step's fields before advancing (RHF `trigger(stepFields)`). Required steps gate Next until valid; optional steps show Skip. Back always preserves entered values.
+
+**Reassurance line:** every card shows a circled-i + italic muted text. Per-flow copy is i18n-keyed; never hardcoded.
+
+**Architecture:** config-driven `Wizard` component — each step is `{ key, labelKey, optional, fields[], content }`. Shared React Hook Form instance holds all values across steps. The wizard owns progress, rail/dots, controls, and final submit. Consumers pass `onComplete(values)` and a `reassuranceKey`.
+
+**Both themes:** uses `--card`, `--muted-foreground`, `--primary` (progress + rail active), `--border` (rail connector) — no hardcoded colors.
+
+**Accessibility:** focus moves to the step heading on advance; rail/dots carry appropriate ARIA roles and labels; Back/Next/Skip keyboard-navigable; Enter submits the active step.
+
+**Mobile vs. desktop:** mobile — dot row + full-width card + stacked buttons. Desktop — left step-rail (hidden on mobile) + centered card + inline control row.
+
+---
+
 *End of Design System Specification — 02-design-system.md*
