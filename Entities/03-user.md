@@ -7,7 +7,7 @@ A User represents a person who can log into the system.
 Doctors, assistants, clinic owners, and practice managers all need authenticated access. The User entity separates login identity from clinic-specific role behavior.
 
 ## Core Information It Holds
-- Name
+- `name` — the user's **Full Name** (`String(200)`, nullable; **existing** column, now surfaced — no new migration). Returned on `GET /me` (as `name`) alongside `joined_at` (= `created_at`). Editable by the authenticated user via `PATCH /me/profile` (#35).
 - Phone number
 - Email
 - Authentication method
@@ -45,7 +45,16 @@ The `/me` endpoint exposes `doctor_id` so the frontend can distinguish users who
 Clinic owner, assistant invite flow, or onboarding flow.
 
 ## Edited By
-The user may edit personal profile fields. Clinic admins may manage role/status within the clinic.
+The user may edit personal profile fields via `PATCH /me/profile` (self-only; updates `name`). Clinic admins may manage role/status within the clinic.
+
+## API Surface (as-built, #35)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/me` | Returns the caller's `AppUser` record including `name`, `joined_at` (= `created_at`), email, phone, memberships/role, and `doctor_id`. |
+| `PATCH` | `/me/profile` | Updates the caller's own `name`. Body: `{ name?: str }`. Returns updated profile. Self-only — cannot affect another user. |
+
+See `docs/specs/2026-06-20-settings-profile-design.md` §3, issue #35.
 
 ## Visibility
 Visible within the clinic according to role and permission needs.

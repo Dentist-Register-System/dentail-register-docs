@@ -11,6 +11,7 @@ Doctors are the decision makers for whether a patient should be placed into thei
 - Phone number
 - Email, optional
 - Specialty
+- `license_number` — the doctor's professional license number (`String(100)`, nullable). Added in migration 0011 (#35). Editable by clinic admins via the existing `PATCH /clinics/{id}/doctors/{doctor_id}` and by the linked user via the new `PATCH /clinics/{id}/doctors/me`.
 - Status
 - `linked_user_id` — foreign key to the user who owns this doctor profile (set at creation; used for authorization, schedule access, and approval actions)
 - Clinic membership
@@ -41,7 +42,16 @@ Two creation paths exist (as-built, issue #49):
 2. **Invite path:** Owner or practice manager invites a doctor by name/phone/specialty. The doctor receives an invite, creates an account, and submits availability. `linked_user_id` is set when the invited doctor's user account is linked.
 
 ## Edited By
-Doctor may edit own profile. Clinic admin/assistant may manage operational doctor setup depending on permissions.
+The linked user may edit their own doctor profile (name, specialty, license_number) via `PATCH /clinics/{id}/doctors/me` (self-only; returns 404 when no profile exists). Clinic admins (owner/PM) may edit any doctor profile via `PATCH /clinics/{id}/doctors/{doctor_id}`, which now also accepts `license_number`. All mutations are recorded via `record_audit`.
+
+## API Surface (as-built, #35)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `PATCH` | `/clinics/{id}/doctors/{doctor_id}` | Owner / PM | Updates doctor fields including `name`, `specialty`, `phone`, and now `license_number`. |
+| `PATCH` | `/clinics/{id}/doctors/me` | Linked user (self) | Self-service update for the caller's own doctor profile: `name`, `specialty`, `license_number`. Returns 404 when the caller has no linked doctor profile in this clinic. |
+
+See `docs/specs/2026-06-20-settings-profile-design.md` §3, issue #35.
 
 ## Visibility
 Doctors can view all clinic schedules and patient records in V1.
