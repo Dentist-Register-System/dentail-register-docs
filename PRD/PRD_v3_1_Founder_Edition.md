@@ -430,7 +430,28 @@ Final Count = 3
 ```
 ---
 
+# 15.2 Scheduling Workflow (Clinic Setting): Direct Booking vs Doctor Approval
+
+Each clinic chooses how appointments are confirmed. This is a clinic-level setting, chosen during clinic setup (the owner setup wizard) and changeable anytime under **Settings → Scheduling**. It applies to all future appointments.
+
+**Direct Booking** — appointments are immediately confirmed; there is no approval step. When an appointment is booked it is created as confirmed straight away.
+- Recommended for: solo practices; clinics where doctors manage their own schedules.
+- Rationale: for an owner-doctor with no assistant, booking and then self-approving every appointment is an empty ritual.
+
+**Doctor Approval** — appointments require doctor approval before confirmation (the flow described in §16–§19). A booking creates a pending request; the assigned doctor approves or rejects.
+- Recommended for: clinics with assistants; multi-doctor clinics; visiting consultants.
+
+In **Direct Booking** mode there is no pending state and no approval action: the booking is confirmed on creation and surfaced informationally — e.g. "Appointment confirmed for {patient} with Dr {doctor} at {time}." The Requests view remains available, but the Approve/Reject action is not shown.
+
+The default for new clinics is **Direct Booking**. (This setting is distinct from §19.1 *Doctor Direct Booking*, which is a per-action doctor capability; §15.2 is the clinic-wide confirmation policy.)
+
+(Communicating confirmations via WhatsApp/calendar remains a future capability; this setting governs the in-app confirmation behavior. See `docs/specs/2026-06-21-scheduling-workflow-design.md`, issue #87.)
+
+---
+
 # 16. Appointment Creation
+
+> The flow below describes **Doctor Approval** mode (see §15.2). In **Direct Booking** mode the appointment is confirmed immediately on submission — no pending state, no doctor notification-to-approve.
 
 Assistant selects:
 
@@ -491,6 +512,8 @@ First request wins. Second request fails. System must prevent double booking.
 ---
 
 # 19. Appointment Approval
+
+> Applies in **Doctor Approval** mode (see §15.2). Under **Direct Booking** this step is skipped — appointments are confirmed on creation.
 
 Doctor may:
 

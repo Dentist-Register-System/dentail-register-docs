@@ -3,6 +3,8 @@
 > Status: Draft for review · Date: 2026-06-20 · Requirement source: issue #46 (slice of epic #9, SP3 Scheduling engine)
 > Scope: the core booking loop — an assistant creates an appointment **request** against a slot; the **assigned doctor** approves (→ a confirmed **appointment**) or rejects; with **atomic slot capacity** enforced. Builds on SP3.1 (availability windows + virtual `compute_slots`, merged). Communication/notifications + hooks remain deferred (pull-based; SP4/SP5).
 
+> **Update — 2026-06-21 (#87, Scheduling Workflow):** the approve→confirm loop described here is now the behavior of the **Doctor Approval** workflow mode. A new clinic-level setting `ClinicSettings.scheduling_workflow` (`direct_booking` | `doctor_approval`, default `direct_booking`) governs this. In **Direct Booking** mode, `create_request` auto-confirms in the same transaction — it materializes the `Appointment` immediately (reusing the same `_materialize_appointment` capacity/lock logic), marks the request `approved`, and stamps `source="direct_booking"` — so there is no `pending` state and no doctor approval step. Atomic capacity guarantees are unchanged in both modes. See `docs/specs/2026-06-21-scheduling-workflow-design.md`.
+
 ---
 
 ## 1. Context & Purpose
