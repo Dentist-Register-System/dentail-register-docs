@@ -1,6 +1,6 @@
 # Daily E2E + Intelligence Testing Harness — Design Spec (#103)
 
-**Status:** Approved (brainstorm 2026-06-22). New **standalone repo** (`dentist-registry-e2e`), never deployed; run locally against local/beta/prod. Treats frontend+backend as a black box — no product code changes.
+**Status:** Approved (brainstorm 2026-06-22). New **standalone repo** [`register-test-suite`](https://github.com/Dentist-Register-System/register-test-suite), never deployed; run locally against local/beta/prod. Treats frontend+backend as a black box — no product code changes.
 **Type:** A real-services (no-mock) end-to-end harness that seeds two clinic archetypes, drives the product exhaustively with Playwright, and runs once a day via Claude Code `/loop` — where Claude detects regressions, computes a per-operation **ease-of-use index**, files deduped `[BUG][E2E testing]` issues, and emails an HTML report.
 
 ## 1. Goal
@@ -18,7 +18,7 @@ Catch real breakages and quantify usability automatically, every day. The produc
 - **Results accumulate locally** with a **retention/prune policy** (must not fill the disk); a tiny trend store is committed for durable day-over-day diffing.
 
 ## 3. Repo & stack
-- **Repo:** `dentist-registry-e2e` under `~/Documents/register_workspace/`, `github-personal` remote. **Never deployed.**
+- **Repo:** `register-test-suite` (org `Dentist-Register-System`) cloned under `~/Documents/register_workspace/`, `github-personal` remote. **Never deployed.**
 - **Stack:** TypeScript + **Playwright** (Apache-2.0). Already used in `dentist-registry-frontend`; best-in-class traces/screenshots/video and native per-interaction signals for the ease index.
 - **Libs (all permissive/MIT):** `@playwright/test`, `@supabase/supabase-js` (admin user creation + teardown), `resend` (email). HTML report is hand-rolled (no heavy templating dep). New non-trivial deps documented per Golden Rule 3.4.
 - **Layout (proposed):**
