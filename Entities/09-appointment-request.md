@@ -17,7 +17,7 @@ Normal scheduling is assistant-initiated and doctor-approved. The request preser
 - Notes
 - Medical history snapshot/input
 - Approval/rejection details
-- Expiry status
+- Expiry status: the request carries an `expires_at` timestamp, which may be **null** when the clinic's expiry setting is "Never". A null `expires_at` means the request never enters the expired state — it remains pending until manually approved, rejected, or cancelled.
 - Link to created appointment if approved
 
 ## Relationships

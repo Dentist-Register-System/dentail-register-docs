@@ -7,6 +7,19 @@ The appointment approval workflow converts a pending appointment request into a 
 
 ## Key Decisions
 
+### Who May Approve or Reject
+
+Access to approve/reject a pending request depends on the actor's role and the clinic's **"Allow other staff to approve appointments"** setting (Settings → Appointment Settings, default off):
+
+| Actor | May approve/reject? |
+|---|---|
+| **Owner** | Always — regardless of setting |
+| **Assigned doctor** | Always — their own requests only |
+| **Other doctor** | Never |
+| **Assistant** | Only when "Allow other staff to approve appointments" is **enabled** |
+
+This setting is owner-controlled and applies to all future approve/reject actions. It does not grant assistants the ability to act on any other scheduling decision (capacity, invites, clinic settings).
+
 ### Approval Actions
 Doctors are presented with:
 
