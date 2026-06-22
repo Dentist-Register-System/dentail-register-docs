@@ -159,3 +159,10 @@ en/hi parity for all new copy: `settings.nav.appointment`, the Appointment Setti
 - Settings GET readable by members for UI gating; PATCH owner-only: §4d. ✅
 - Sub-issues under #91; docs updated: §6/§7. ✅
 - Rule 17.0 + i18n + tests + merge policy: §8. Placeholder scan: concrete fields/endpoints/components, no TBD. ✅
+
+## 11. DESIGN UPDATE (2026-06-22) — Approval settings merged into the Scheduling pane
+After reviewing the rendered pane, we MERGED the approval settings into the existing **Settings → Scheduling** pane instead of a separate "Appointment Settings" pane. Rationale: the staff-approval + expiry settings only matter under Doctor Approval, so nesting them under the workflow choice (one screen) is the simplest model for non-tech-savvy users and removes cross-pane "go change the other setting" friction. This SUPERSEDES §5b (no new pane, no 4th nav item) and reframes §2c/§9.
+- The **Scheduling** pane is now three stacked cards (same 20px gaps): **Scheduling Workflow** (Direct Booking / Doctor Approval radios) → **Staff Approval** (toggle) → **Request Expiry** (duration select incl. Never).
+- Contextual state follows the **currently selected** workflow: under **Direct Booking**, the Staff Approval toggle + Request Expiry select are **disabled**, their info notes hidden, and each shows a compact lock note — **Staff Approval:** "Not used in Direct Booking — appointments are confirmed instantly, with no approval step." **Request Expiry:** "Not used in Direct Booking — requests are confirmed instantly and never left pending, so nothing expires." Under **Doctor Approval** both are enabled with their info notes.
+- One **Save Changes** persists all three fields; the auto-approve-on-switch confirm lives in this same pane.
+- No separate "Appointment Settings" nav item is added. Nav stays Profile · Clinic · Scheduling.

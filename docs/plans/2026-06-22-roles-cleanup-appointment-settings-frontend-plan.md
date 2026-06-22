@@ -787,3 +787,8 @@ git commit -m "chore(settings): final tsc/build/i18n green for #97"
 - **Placeholder scan:** verification asides ("verify exact Dialog export names", "if common.cancel is missing") are concrete checks against named files, not TBDs; expiry options + all copy are concrete. ✅
 - **Rule 17.0:** semantic tokens only; composes `components/ui/*`; new `Switch` is a tokened primitive. ✅
 ```
+
+---
+
+## REVISION (2026-06-22): Tasks 6 & 7 superseded by the merged Scheduling pane
+Design changed after render review (see spec §11). **Task 6 and Task 7 are replaced by a single task**: rewrite `src/features/settings/scheduling-pane.tsx` to host three cards (Scheduling Workflow → Staff Approval → Request Expiry) with contextual disable + compact lock notes under Direct Booking, a single Save that persists all three fields, and the auto-approve-on-switch confirm — plus a new `src/components/ui/switch.tsx` primitive and i18n. **No separate `appointment-settings-pane.tsx`, no settings-shell nav change.** Visual source of truth: the approved render at `/tmp/appt-settings-render/index.html`. Task 8 (tsc + build + i18n parity) stands as the final verify.
