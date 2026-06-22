@@ -577,6 +577,20 @@ start a dev server, database, or dev test on the reserved test-suite ports
 This isolation lets a dev session and an E2E run proceed in parallel without
 fighting over ports, the database, or server lifecycle.
 
+## Rule 10.7 — The `e2e` marker means synthetic test-suite data; never real.
+
+All data created by `register-test-suite` carries the **`e2e` marker** so it is
+unmistakable everywhere it surfaces:
+- entity display names are **prefixed `[E2E]`** (e.g. `[E2E] Solo Clinic`),
+- test-user emails use the **`e2e+<runId>@<test-domain>`** namespace,
+- the isolated app clones are **`-e2e`-suffixed** repos/containers.
+
+Any data bearing the `e2e` marker (prefix **or** suffix) is **synthetic and
+test-only**: it is created and deleted **exclusively by the test suite** and must
+**never** be treated as real clinic data in dev or prod. Conversely, **never**
+manually create real/dev/prod data using the `e2e` marker — it is reserved. This
+keeps test-suite data unambiguously identifiable, ignorable, and safe to clean.
+
 ---
 
 # 11. Security and Privacy Rules
@@ -735,6 +749,7 @@ Claude Code must never:
 - Implement multi-field entity creation (clinic, doctor profile) as a single dense form or plain dialog — use the guided one-question wizard (Rule 18.4).
 - Close a dialog/sheet silently after an important create/save/approve/reject action without showing a success card (Rule 18.5).
 - Run a local dev server, database, or dev test on the test-suite-reserved ports `5434`/`8001`/`3001` (Rule 10.6).
+- Treat `e2e`-marked data (`[E2E]` name prefix, `e2e+…` emails, `-e2e` suffix) as real, or manually create real/dev/prod data using the `e2e` marker (Rule 10.7).
 
 ---
 
