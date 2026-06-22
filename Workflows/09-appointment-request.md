@@ -30,7 +30,7 @@ flowchart TD
     H --> I{Doctor decision}
     I -->|Approve| J[Create confirmed appointment]
     I -->|Reject| K[Mark request rejected]
-    I -->|No action for 120 mins| L[Mark requested - expired approval]
+    I -->|No action within expiry duration| L[Mark requested - expired approval]
     J --> M[Enqueue external side effects]
     M --> N[WhatsApp confirmation and Google Calendar event]
     K --> O[Release reserved capacity]
@@ -95,7 +95,9 @@ The doctor may reject a pending request. A rejection note is optional. Rejected 
 A rejected request may be used as the starting point for a new request through a `Reschedule Request` action. This action must not reopen the rejected request. It should pre-populate patient and doctor context where appropriate and create a new request with a reference to the rejected request.
 
 ## Request Expiry
-Appointment requests expire after 120 minutes if the doctor has not approved or rejected them. Once the expiry threshold is reached, the assistant screen should show the request as `Requested - Expired Approval`.
+The expiry duration for appointment requests is a **configurable clinic setting** (Settings → Appointment Settings, default **120 minutes**). The owner may also set it to **"Never"**, in which case the request's `expires_at` timestamp is null and the request never expires — it remains pending until manually approved, rejected, or cancelled.
+
+When a numeric expiry is configured and the threshold is reached, the assistant screen should show the request as `Requested - Expired Approval`.
 
 Expired requests release reserved slot capacity. Expired requests remain visible in history and on relevant screens but cannot be approved. If the doctor opens an expired notification, the request should be clearly marked as expired. The notification should not disappear because disappearing notifications create confusion.
 

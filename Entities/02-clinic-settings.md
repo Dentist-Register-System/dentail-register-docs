@@ -10,7 +10,8 @@ Different clinics operate differently. Some clinics allow multiple bookings per 
 - Allow Multiple Bookings Per Slot
 - Max bookings per slot, default 3 when multi-booking is enabled
 - Default appointment slot size, default 30 minutes
-- Appointment request expiry, default 120 minutes
+- Appointment request expiry: an integer number of minutes (default 120), or **"Never"** (stored as null — requests do not expire and remain pending until manually resolved)
+- Allow staff approval: whether assistants may approve or reject appointment requests on behalf of doctors (default **off**)
 - Default post-confirmation hook delay, default 5 minutes
 - Reminder configuration
 - WhatsApp enabled status
@@ -32,10 +33,10 @@ Settings are active as long as the clinic is active.
 System during clinic creation.
 
 ## Edited By
-Clinic owner or authorized admin. Some settings may later be restricted.
+Clinic owner only. Settings writes (PATCH) are restricted to the owner role.
 
 ## Visibility
-Visible to clinic owner and possibly practice manager. Assistants and doctors may not need direct access to all settings.
+Readable by all active clinic members (owner, doctor, assistant) — needed for UI gating (e.g. whether to show approve/reject actions). Write access is owner-only.
 
 ## Deletion Behavior
 Settings should not be independently deleted.

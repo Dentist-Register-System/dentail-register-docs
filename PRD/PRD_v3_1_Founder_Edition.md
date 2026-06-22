@@ -142,18 +142,13 @@ Responsibilities:
 
 > **Owner-doctor default (as-built, issue #49):** The clinic creator is most commonly also a practicing doctor — the **owner-doctor** — and this is the **default happy path**. After creating the clinic, the owner creates their **own doctor profile** as a separate, self-service step (no invite required, immediately active, not derived from clinic data). Clinic data and doctor data are deliberately kept distinct. See `docs/specs/2026-06-20-owner-doctor-self-profile-nav-split-design.md`.
 
-## Practice Manager
-
-Responsibilities:
-
-- monitor workflows
-- review operations
+> **Role set (as-built, issue #91):** The system recognizes three roles: **Owner**, **Doctor**, and **Assistant**. The `practice_manager` role has been retired — its responsibilities are fully covered by the Assistant role. Doctor-ness is determined by whether a user has a linked doctor profile (`doctor_id`), independent of their membership role; an owner can also be a practicing doctor.
 
 ---
 
 # 6.1 Clinic Profile & Manual Address (V1)
 
-Each clinic captures a **structured, manual postal address** as part of clinic setup. During owner onboarding (creating a new clinic), a clinic address is **mandatory** — onboarding cannot complete without it. The owner/practice-manager can edit it later from the clinic profile/settings.
+Each clinic captures a **structured, manual postal address** as part of clinic setup. During owner onboarding (creating a new clinic), a clinic address is **mandatory** — onboarding cannot complete without it. The owner can edit it later from the clinic profile/settings.
 
 Fields: Address Line 1 (required), Address Line 2, Landmark, Area/Locality (required), City (required), State (required), PIN Code (required, 6-digit Indian PIN), Google Maps Link (optional). On save, the system generates and stores a clean **formatted address** string (optional blank fields skipped — no empty lines/labels).
 
@@ -169,7 +164,7 @@ The clinic profile also captures **contact details** and helps owners keep their
 - **Address Preview:** a read-only view showing exactly how the clinic will appear to patients — clinic name + formatted address + optional directions link — so owners can verify future patient-facing communications (appointment confirmations/reminders) will be correct. The communications themselves are not built here.
 - **Profile Completeness:** an informational checklist (clinic name, address, phone, WhatsApp, email) with a completion percentage that guides owners to fill missing fields. It never blocks the app or adds requirements beyond onboarding.
 
-Edits to clinic contact details are restricted to owner/practice-manager (existing role pattern); all clinic members may view the preview and completeness indicators. A future **sticky in-app notification** will actively prompt owners to complete missing details once the in-app notifications system exists (issue #40). (See `docs/specs/2026-06-19-clinic-contact-preview-completeness-design.md`, issue #39.)
+Edits to clinic contact details are restricted to the **owner** only; all clinic members may view the preview and completeness indicators. A future **sticky in-app notification** will actively prompt owners to complete missing details once the in-app notifications system exists (issue #40). (See `docs/specs/2026-06-19-clinic-contact-preview-completeness-design.md`, issue #39.)
 
 # 7. Real World Workflow Today
 
@@ -274,7 +269,7 @@ Fields:
 
 ~~Assistant creates doctor.~~
 
-> **Changed in SP2 (2026-06-18):** doctor (and assistant) creation is restricted to **owner / practice_manager** for V1 — not the assistant. Recorded decision in `docs/specs/2026-06-18-core-entities-design.md` §2/§15. Widenable to assistants later with no schema change.
+> **Changed in SP2 (2026-06-18), updated in #91 (2026-06-22):** Doctor creation (inviting a new doctor) is allowed for **owner and assistant**. Assistant creation (inviting a new assistant) is restricted to the **owner** only. Clinic settings, invites, and assistant management remain owner-only actions. Recorded in `docs/specs/2026-06-18-core-entities-design.md` §2/§15 and `docs/specs/2026-06-22-roles-cleanup-appointment-settings-design.md` §2b.
 
 Fields:
 - name
@@ -492,7 +487,7 @@ Pending slots remain visible. Other assistants can see:
 - request creator
 - request age
 
-**Pending requests expire after 120 minutes.**
+**Pending requests expire after a configurable duration (Settings → Appointment Settings, default 120 minutes).** The owner may also set the expiry to **"Never"**, in which case requests do not expire and remain pending until manually approved or rejected by an authorized actor.
 
 Expired requests remain visible in the system and should be displayed as:
 
@@ -545,6 +540,20 @@ Doctors may select:
 `View Patient History`
 
 to review historical appointments, treatments, medical history, and previous closing notes.
+
+---
+
+# 19.x Staff Approval Setting
+
+The clinic owner may enable **"Allow other staff to approve appointments"** under **Settings → Appointment Settings** (default: **off**). This setting controls whether assistants may approve or reject pending requests on behalf of doctors.
+
+Permission rules:
+- The **owner** can always approve or reject any request, regardless of this setting.
+- The **assigned doctor** can always approve or reject their own requests.
+- A **doctor** can never approve or reject another doctor's request.
+- An **assistant** may approve or reject a request **only when this setting is enabled**.
+
+This setting is relevant only in Doctor Approval mode (§15.2); in Direct Booking mode there are no pending requests to approve. (See `docs/specs/2026-06-22-roles-cleanup-appointment-settings-design.md` §2b/§2c, issue #91.)
 
 ---
 
