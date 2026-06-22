@@ -564,6 +564,19 @@ Automated tests are not enough.
 
 Manual acceptance plan must be used before declaring major workflow implementation complete.
 
+## Rule 10.6 — Test-suite ports are reserved; never use them for dev.
+
+The `register-test-suite` E2E harness runs against an **isolated** stack (clones
+`dentist-registry-backend-e2e` / `dentist-registry-frontend-e2e`) on dedicated ports:
+**Postgres 5434, backend 8001, frontend 3001**. These ports are reserved
+**exclusively** for the test suite.
+
+Local development, local servers, and dev testing use **5433 / 8000 / 3000**. Never
+start a dev server, database, or dev test on the reserved test-suite ports
+(`5434`/`8001`/`3001`) — doing so collides with E2E runs and corrupts their results.
+This isolation lets a dev session and an E2E run proceed in parallel without
+fighting over ports, the database, or server lifecycle.
+
 ---
 
 # 11. Security and Privacy Rules
@@ -721,6 +734,7 @@ Claude Code must never:
 - Use a dropdown (`<select>`) for doctor selection in Clinic Schedules — use the M3 DoctorPicker (bottom-sheet + search) instead (Rule 18.3).
 - Implement multi-field entity creation (clinic, doctor profile) as a single dense form or plain dialog — use the guided one-question wizard (Rule 18.4).
 - Close a dialog/sheet silently after an important create/save/approve/reject action without showing a success card (Rule 18.5).
+- Run a local dev server, database, or dev test on the test-suite-reserved ports `5434`/`8001`/`3001` (Rule 10.6).
 
 ---
 
