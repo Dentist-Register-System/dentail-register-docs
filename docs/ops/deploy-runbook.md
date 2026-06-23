@@ -134,3 +134,11 @@ This is a release — do it in order (Golden Rule §19.3). Use the script's rele
 - Real secrets only in `~/Documents/register_workspace/.register-ops.env` (outside repos, `chmod 600`) + the platform dashboards. Never committed.
 - Vercel/Render account auth stays in their CLIs via interactive `login` (not in any file). The Cloudflare token is **DNS-edit, single-zone** scoped.
 - Rotate the Supabase **service-role** key before onboarding real clinics (it is admin-level). The script never echoes secret values.
+
+## Scheduled reminders
+**Weekly key-rotation reminder — GitHub Actions** (`.github/workflows/key-rotation-reminder.yml`):
+- **Fires:** Mondays **09:07 IST** (`37 3 * * 1` UTC) — plus a manual `workflow_dispatch` trigger for testing.
+- **Does:** comments a rotation checklist on the pinned tracking issue **#124** using the built-in `GITHUB_TOKEN` — no external auth, no secrets touched.
+- **Activation:** scheduled workflows run only on the **default branch**, so this starts firing once this PR merges to `main`. Test it anytime via **Actions → Weekly deploy-key rotation reminder → Run workflow**.
+- **If it ever stops:** GitHub disables scheduled workflows after ~60 days of repo inactivity — re-enable in the Actions tab (this repo is active, so unlikely).
+- *(A cloud `/schedule` routine `trig_016e1TFvZQV8ryLNDyNVFQJh` was created then **disabled** — the cloud env lacked GitHub repo access; superseded by this workflow.)*
