@@ -68,6 +68,16 @@ No backfill (all nullable). No new tables.
 - Frontend: `tsc --noEmit` + `npm run build` + i18n en/hi parity + e2e (drawer opens from row; Edit Profile only on own row; disabled tabs; owner-only ⋯ Edit; self-edit of new fields). FE PR **held for user QA**.
 - Render-before-build sign-off; never merge red; `gh-personal`; **docs work in a git worktree** (a separate designer session shares the docs repo).
 
+## 6b. Availability-management authorization (added 2026-06-23, folded into #107)
+The drawer's **"Manage availability"** button (doctors only) must reflect who may actually manage a doctor's availability. Today `authorize_manage_availability` allows **any** assistant — the user wants assistants gated by a new setting. Rule:
+- **Owner** → manage any doctor's availability.
+- **Doctor (non-owner)** → manage **own only** (never a colleague's).
+- **Assistant** → manage other doctors' availability **only when the new clinic setting `allow_staff_manage_availability` is ON**; otherwise not.
+- **Assistants have no own availability** (button never shows on assistant rows).
+- **New setting:** `allow_staff_manage_availability` BOOLEAN NOT NULL DEFAULT false on `clinic_settings_beta` (dedicated toggle, distinct from `allow_staff_approval`). Migration `0019`. Surfaced in `ClinicSettingsRead`/`ClinicSettingsUpdate` and a toggle in **Settings → Scheduling** (the merged scheduling pane). 
+- **Backend:** `authorize_manage_availability` gains the setting gate for the assistant branch (loads `get_settings`); owner = any, doctor = own, assistant = setting-gated. Tests cover all four cases.
+- **Frontend:** the drawer's "Manage availability" visibility = `member is doctor && (myRole===owner || member.linked_user_id===me.user_id || (myRole===assistant && settings.allow_staff_manage_availability))`. The FE clinic-settings type/hook exposes the new flag; the Scheduling pane adds the toggle.
+
 ## 7. Scope guards / deferred
 - **Permissions tab** content → #108 (own design; granular permissions). **Activity tab** content → #109 (audit read API). This slice only renders them disabled.
 - No structured address / structured working-hours (free text by decision).
