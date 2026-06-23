@@ -31,7 +31,7 @@ openssl rand -hex 24    # paste as HOOK_TICK_SECRET (and reuse it on Render, ste
 
 ### 0.2 Vercel (frontend)
 1. Vercel → **Add New → Project** → import `dentist-registry-frontend` from GitHub (authorize the GitHub app). Framework auto-detected (Next.js).
-2. Set **Production Branch = main** (Settings → Git).
+2. Set **Production Branch = main** (Settings → Git), then **disable production auto-deploy** (Settings → Git → turn off automatic production deployments / set `git.deploymentEnabled=false`). Keep **preview deployments on** (per-PR QA). Production is promoted manually during a release.
 3. Add domain **register.rohan2jos.com** (Settings → Domains) → copy the **CNAME target** Vercel shows → put in `VERCEL_CNAME_TARGET`.
 4. Terminal: `vercel login` (interactive — token stays with the CLI, not in any file).
 
@@ -40,6 +40,7 @@ openssl rand -hex 24    # paste as HOOK_TICK_SECRET (and reuse it on Render, ste
 2. Render → **New → Blueprint** → connect `dentist-registry-backend` → it reads `render.yaml` and creates the **free** web service.
 3. In the service → **Environment**, set the `sync:false` secrets: `DATABASE_URL` (the Supabase **pooler** string from dev `.env`), `HOOK_TICK_SECRET` (**same** value as 0.1), and optionally `RESEND_API_KEY`.
 4. Settings → **Custom Domain** → add **api.rohan2jos.com** → copy the **CNAME target** → put in `RENDER_CNAME_TARGET`.
+5. Settings → **Deploy Hook** → copy the secret URL → put in `RENDER_DEPLOY_HOOK_URL` (this is how the release triggers the backend deploy; `autoDeploy` is off).
 
 `dentist-registry-backend/render.yaml`:
 ```yaml
@@ -51,7 +52,7 @@ services:
     buildCommand: pip install uv && uv sync --frozen
     startCommand: uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
-    autoDeploy: true
+    autoDeploy: false          # Golden Rule §19.1 — no auto-deploy; release is manual via the deploy hook
     envVars:
       - key: ENVIRONMENT
         value: production
@@ -99,9 +100,11 @@ Each phase is idempotent — safe to re-run.
 
 ---
 
-## Phase 2 — First deploys [MANUAL/auto]
-- **Frontend:** push to `main` (or `vercel --prod` from the FE dir) → Vercel builds → live at the `*.vercel.app` URL, then `register.rohan2jos.com` once DNS+SSL settle (a few min).
-- **Backend:** Render auto-deploys the Blueprint on creation/push → live at `*.onrender.com`, then `api.rohan2jos.com`. First free-tier build can take a few minutes; the service sleeps when idle (the cron tick wakes it).
+## Phase 2 — First deploy [MANUAL, ordered backend→frontend]
+This is a release — do it in order (Golden Rule §19.3). Use the script's release flow, or by hand:
+- **Backend first:** trigger the Render deploy (`curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"`), wait until `https://api.rohan2jos.com/health` is 200. First free-tier build takes a few minutes; the service sleeps when idle (the cron tick wakes it).
+- **Frontend next:** from the FE dir, `vercel --prod` → live at `*.vercel.app`, then `register.rohan2jos.com` once DNS+SSL settle.
+- (See `release-playbook.md` for the versioned, automated version of this.)
 
 ## Phase 3 — Supabase [ASSISTED]
 1. **Auth URLs:** add `https://register.rohan2jos.com` to Auth → URL Configuration → **Site URL + Redirect URLs** (keep localhost for dev). *(Claude can apply via the Supabase MCP, or do it in the dashboard.)*
@@ -115,8 +118,10 @@ Each phase is idempotent — safe to re-run.
 
 ---
 
-## Ongoing deploys
-- Merge to `main` → Vercel + Render auto-deploy. Every PR gets a Vercel **preview URL** (your FE QA surface). No script needed for routine deploys; re-run `./deploy.sh cf-dns`/`cron` only if those change.
+## Ongoing releases (manual — Golden Rule §19)
+- **No auto-deploy.** Merging a PR does **not** deploy. Every PR still gets a Vercel **preview URL** (your FE QA surface).
+- After a PR merges, do a **release** per `release-playbook.md`: Claude asks "release? major/minor?", then `./deploy.sh release <major|minor>` runs **backend→frontend** (apply migration via MCP if any → deploy BE + health-check → deploy FE → smoke → tag `vX.Y.0`).
+- Re-run `./deploy.sh cf-dns`/`cron` only if DNS or the tick job changes.
 
 ## Troubleshooting
 - **CORS error in browser:** `CORS_ORIGINS` on Render must be exactly `["https://register.rohan2jos.com"]`; redeploy after changing.
