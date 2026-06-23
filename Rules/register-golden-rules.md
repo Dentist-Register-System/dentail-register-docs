@@ -750,6 +750,7 @@ Claude Code must never:
 - Close a dialog/sheet silently after an important create/save/approve/reject action without showing a success card (Rule 18.5).
 - Run a local dev server, database, or dev test on the test-suite-reserved ports `5434`/`8001`/`3001` (Rule 10.6).
 - Treat `e2e`-marked data (`[E2E]` name prefix, `e2e+…` emails, `-e2e` suffix) as real, or manually create real/dev/prod data using the `e2e` marker (Rule 10.7).
+- Enable platform auto-deploy, or deploy/release a frontend ahead of the backend it depends on (Rule 19).
 
 ---
 
@@ -892,7 +893,27 @@ Reference: `docs/specs/2026-06-20-settings-profile-design.md` (#35) and design-s
 
 ---
 
-# 19. Final Operating Principle
+# 19. Deployment & Release Ordering Rules
+
+## Rule 19.1 — Releases are manual and deliberate. No auto-deploy.
+
+Platform auto-deploy (Vercel Git integration, Render `autoDeploy`) must be **disabled**. A merge to `main` does **not** deploy. Production changes only via an explicit, human-approved release. (Future: once a separate **beta** environment exists, beta may auto-deploy and prod stays a manual push from the laptop — but not in V1.)
+
+## Rule 19.2 — After a PR merges, Claude Code offers a release.
+
+When development completes and the PR is merged, Claude Code must **ask: "Do you want to do a release?"** If yes, **ask: "Major or minor version?"**, then perform the release per the ops playbook (`docs/ops/release-playbook.md`). Claude never releases without this explicit confirmation.
+
+## Rule 19.3 — Backend leads. The frontend is never ahead of the backend.
+
+A release deploys in dependency order: **(1) apply the additive, backward-compatible migration to Supabase (controller-only, via MCP); (2) deploy the backend and verify `/health`; (3) deploy the frontend.** Never deploy a frontend that depends on a backend not yet live. Backend API/schema changes that an unshipped frontend will rely on must be **additive/backward-compatible** (new-backend + old-frontend must keep working); defer destructive/contract changes until the old frontend is gone.
+
+## Rule 19.4 — Follow the ops playbook; secrets stay out of repos.
+
+The release procedure lives in `docs/ops/release-playbook.md` + `docs/ops/deploy.sh` (committed, no secret values). Real secrets live only in `~/Documents/register_workspace/.register-ops.env` (outside every repo, `chmod 600`) and the platform dashboards — never committed (§11.2). Where secrets pass through tooling/automation context, **rotate the relevant keys on the standing weekly schedule.**
+
+---
+
+# 20. Final Operating Principle
 
 When in doubt:
 

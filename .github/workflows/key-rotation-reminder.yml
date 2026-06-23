@@ -1,0 +1,36 @@
+name: Weekly deploy-key rotation reminder
+
+# Posts a rotation checklist comment on the pinned tracking issue every week.
+# Native: uses the built-in GITHUB_TOKEN — no external auth, nothing to re-authorize.
+# Scheduled workflows run only on the DEFAULT branch, so this starts firing once merged to main.
+
+on:
+  schedule:
+    - cron: "37 3 * * 1"      # Mondays 03:37 UTC = 09:07 IST
+  workflow_dispatch: {}        # manual trigger (for testing)
+
+permissions:
+  issues: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment on the rotation tracking issue (#124)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > body.md <<'EOF'
+          🔑 **Weekly key rotation** — rotate this week's deploy keys (Golden Rule §19.4):
+
+          - [ ] Cloudflare DNS API token → `CF_API_TOKEN`
+          - [ ] Render deploy-hook URL → `RENDER_DEPLOY_HOOK_URL`
+          - [ ] Vercel deploy-hook URL → `VERCEL_DEPLOY_HOOK_URL`
+          - [ ] `HOOK_TICK_SECRET` → rotate on the **Render env** AND the **cron-job.org** job header together (must match)
+          - [ ] cron-job.org API key → `CRONJOB_API_KEY`
+          - [ ] Supabase service-role key (especially before real clinics)
+
+          Then update `~/Documents/register_workspace/.register-ops.env` (the only place real values live).
+          Procedure: `docs/ops/release-playbook.md` → Key rotation.
+          EOF
+          gh issue comment 124 --repo "${{ github.repository }}" --body-file body.md

@@ -1,1 +1,4 @@
 .DS_Store
+.register-ops.env
+*.secrets.env
+docs/ops/deploy.env
