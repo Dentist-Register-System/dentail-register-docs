@@ -315,6 +315,8 @@ Wednesday:
 
 **Availability becomes immediately usable. No approval required.**
 
+**Experience (#129).** Availability is modelled as a **usual week + per-week exceptions**: the doctor sets her normal weekly pattern once (different times per day and split shifts supported, e.g. Mon/Wed/Fri 10–1, Tue/Thu 5–8), then tweaks exceptions — **one-off days** (extra hours on a date) and **time off** — week to week. The target is a ~5-minute Sunday-evening task for a non-tech-savvy dentist, not a CRUD console. Edits are **live** but gated by a **confirmation-preview card** (review the resulting week, then Submit). There is **no "break" concept** (a break is the gap between two windows), and **"add slots" means edit availability** — slots are always derived, never created directly. See `docs/specs/2026-06-24-my-schedule-redesign-design.md`.
+
 ---
 
 # 14. Assistant-Controlled Availability
