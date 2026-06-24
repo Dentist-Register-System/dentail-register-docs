@@ -27,6 +27,40 @@ The current screen is design-system-clean in code but is a flat add/remove edito
 7. **Cross-screen reuse:** the same components power `/my-schedule` (self), `/clinic-schedules` (owner/assistant pick a doctor), `/doctors/[id]`. Editing gated by **#107 availability authz** (owner any · doctor own · assistant iff `allow_staff_manage_availability`); the Edit button is hidden/disabled otherwise.
 8. **Out of scope (noted, not precluded):** multi-clinic doctor switcher (later); calendar grid view; per-doctor slot length; explicit break concept; draft/publish workflow.
 
+## Mockup direction — element-by-element source map (BUILD TO THIS)
+
+Two candidate mockups were produced; we take a **hybrid**. **Read this before building — do not pick one mockup wholesale.**
+
+- **Option B** = `Mockups/mockups_recos_availability.png` — the **frame**: main screen + empty states. Vertical day list, clean, plain-language, mobile-first. **This is the base.**
+- **Option A** = `Mockups/mockup_recos_availability_slot_view_top.png` — the **editor**: its Edit-Availability modal + "Review changes" card. We take **only** the modal/review flow from A.
+
+### Take from **Option B** (base — main screen, empty states)
+1. **Overall frame & layout.** AppShell + `PageContainer`/`PageHeader`. Title "My Schedule" + subtitle "Manage your availability and view your appointment slots." Three stacked cards in B's order: **Your week → Appointment slots (preview) → Quick actions.** On desktop, top row is two columns (left: "Your week"; right: stacked "Upcoming one-off days" + "Time off"); slots + quick-actions full-width below. Mobile = B's single-column stack (B's mobile is the reference for breakpoints).
+2. **Card 1 "Your week" — use B's VERTICAL LIST, not A's grid.** One row per day Mon→Sun: `Day · time range(s) · small status dot`; non-working days show **"Off"**. Split shifts render both ranges on the day's row (e.g. "10:00 AM–1:00 PM, 2:00 PM–5:00 PM"). Top-right **"Edit availability"** button (pencil). Subtitle "Your usual weekly availability."
+3. **One-off days + Time off strips (B).** Two compact cards: **"Upcoming one-off days"** (badge "Upcoming N" + "View all") showing next entries as `date · extra hours`; **"Time off"** (badge + "View all") showing `date/range · reason · full/partial`.
+4. **Card 2 "Appointment slots (preview)" (B).** Subtitle "Preview of availability (30-min slots)." A **Sun–Sat day selector** with the selected day in primary + a **week-range pill** ("19 – 25 May") with ‹ › steppers. Selected day shows `Monday, 20 May · Total slots: 6` + a **read-only** slot-chip grid. **Info row (B's exact wording):** "Slot duration: 30 minutes" · "Working hours: 10:00 AM–1:00 PM".
+5. **Card 3 "Quick actions" — B's THREE actions only**, each with a description line: **Set weekly hours** / "Define your usual availability" · **Add one-off day** / "Add extra hours for a specific date" · **Add time off** / "Mark a day or range as unavailable". Each opens the Edit modal on the matching tab.
+6. **Empty / first-run states (B).** Use B's empty states in both themes: the main-screen **"Set your availability"** illustration + **"Set my availability"** CTA (shown when no usual week), and the slots-card **"Your slots will appear here"** placeholder until availability exists.
+
+### Take from **Option A** (editor — adopt these wholesale)
+7. **Edit Availability modal — A's 3-tab modal/bottom-sheet.**
+   - **Usual week tab (A):** per-day rows Mon→Sun, each = **toggle (work this day?) + start–end time + "+" to add a second range (split shift)**; disabled days greyed. Bottom: **"Apply to several days"** affordance (set hours for multiple selected days at once). Info note: "Changes apply to future appointments; existing ones are unaffected."
+   - **One-off days tab (A):** header "Add extra hours on a specific date"; list of upcoming one-off entries with edit/delete; **"+ Add one-off day"**.
+   - **Time off tab (A):** header "Mark dates or ranges when you're not available"; list with edit/delete; full-day **or** partial; optional reason ("Vacation"); **"+ Add time off"**.
+8. **Confirmation / "Review changes" card — A's exact pattern.** On **Submit**: a card titled "Review changes" → "Here's how your schedule will look from next week" → a **mini week preview** (7 days with times + "Off") + the diff → actions **"Keep editing"** (secondary) / **"Confirm & save"** (primary). Then a success state. (This is our confirmation-preview tenet — Golden Rule 18.5 / #60 / #61.)
+
+### DROP entirely (do NOT build — mostly from A)
+- ❌ **A's 7-column "Your week" grid** and its **"1 window" / "Working windows"** labels. **Never expose the word "window"** to the user (internal term only). Use B's list + "Working hours".
+- ❌ **A's "View full calendar"** quick action — there is **no full-calendar feature**; slots are a preview only.
+- ❌ **A's Home screen** ("Good morning, Dr. Sayali" + **AI Brief** + stat tiles) — that's the Home screen, not My Schedule; the AI brief (#64) is **deferred**. Out of scope here.
+- ❌ **A's "Why am I seeing this?"** link — drop, or replace with a single muted line "These slots come from your availability." No jargon.
+- ❌ A's multiple decorative per-day colors — use one calm accent (avoid colour-as-meaning; a11y).
+
+### Cross-cutting (both)
+Soft Purple (light) / Dark Purple (dark), **both themes**; **mobile-first** (B's mobile is the reference); semantic tokens only; touch targets ≥44px; i18n en+hi parity; **render-on-:8753 + user sign-off before building**.
+
+**One-line summary for the dev:** *Build B's main screen + empty states; drop into it A's Edit-Availability modal and "Review changes / Confirm & save" card; never show the word "window," no "View full calendar," no AI-brief tiles.*
+
 ## 3. Screen information architecture — `/my-schedule`
 
 `PageContainer` + `PageHeader` ("My Schedule" / "Manage your availability and appointment slots"), three stacked cards:
