@@ -1,6 +1,8 @@
 # Release Playbook (Claude Code — follow this exactly)
 
 > Governs Golden Rule §19. **This is what Claude Code does after a PR merges.** No auto-deploy exists; releases are manual, deliberate, and ordered **backend → frontend**.
+>
+> **🟢 AS-BUILT (2026-06-25) — see [`deployment-inventory.md`](./deployment-inventory.md):** both FE and BE run on **Render** (the FE moved off Vercel). So the Vercel-specific bits below are superseded. Until `deploy.sh` is updated for the Render FE, run a release by triggering **each service's Render deploy hook** (`.register-ops.env`) **or** the Render dashboard → **Manual Deploy → Deploy latest commit**, **backend first**, then verify `api.rohan2jos.com/health` before the frontend.
 
 ## When this triggers
 After development completes **and the PR is merged** (FE, BE, or both), Claude Code must offer a release. Do **not** release on your own initiative or before merge.
@@ -14,7 +16,7 @@ After development completes **and the PR is merged** (FE, BE, or both), Claude C
 
 ## Preconditions (check before releasing)
 - The relevant PR(s) are **merged to `main`** (deploy hooks build `main`).
-- **Migrations:** if the backend PR added a migration, **apply it to Supabase first** via the Supabase MCP (`apply_migration`, offline-review the SQL) — controller-only, never on deploy. Ensure it is **additive/backward-compatible** so the currently-live frontend keeps working (Golden Rule §19.3).
+- **Migrations (parity gate):** before any backend deploy, the **beta Supabase DB must equal the repo's Alembic head**. If a backend PR added migrations, apply them to beta **first** — controller-only, never on deploy — via the Supabase MCP (`apply_migration`) **or** `alembic upgrade head` against the beta connection (the beta project isn't the MCP-scoped one, so Alembic-direct is typical). Offline-review the SQL; ensure it's **additive/backward-compatible** so the live frontend keeps working (Golden Rule §19.3). Abort the release if parity can't be reached.
 - The secrets file exists: `~/Documents/register_workspace/.register-ops.env` (the script validates).
 
 ## Run the release (ordered backend → frontend)
@@ -25,7 +27,7 @@ From the docs repo, `cd docs/ops`:
 This does, in order (and **aborts before touching the frontend if the backend never goes healthy**):
 1. Computes the next version `vX.Y.0` from the latest backend tag.
 2. **Backend:** triggers the Render deploy hook (builds `main`) → polls `https://api.rohan2jos.com/health` until 200.
-3. **Frontend:** triggers the Vercel production deploy hook (builds `main`).
+3. **Frontend:** triggers the **Render `register-web`** deploy hook (builds `main`). *(Was Vercel in the original plan; FE is now a Render service.)*
 4. **Smoke:** FE / API `/health` / tick endpoint status codes.
 5. **Tags** both repos at `main` → `vX.Y.0` (remote, via `gh` — never touches working trees).
 
@@ -45,5 +47,5 @@ Equivalent manual order if running by hand: `./deploy.sh deploy-be` (wait health
 ## Key rotation (standing)
 Secrets pass through automation/Claude context during releases. **Rotate the deploy keys weekly** (see the standing weekly reminder): Cloudflare DNS token, Render & Vercel deploy-hook URLs, `HOOK_TICK_SECRET` (update on Render + cron-job.org together), cron-job.org API key, and the Supabase service-role key before real clinics. After rotating, update `~/Documents/register_workspace/.register-ops.env`.
 
-## Future (not now)
-Once a separate **beta** environment exists: beta may auto-deploy on merge; **production stays a manual laptop push** following this same backend→frontend order.
+## Environments
+The live environment is **beta** (separate Supabase project `register-beta`; see [`deployment-inventory.md`](./deployment-inventory.md)) on Render free tier, released manually per the order above. A future dedicated **production** environment stays a manual push following this same backend→frontend order; beta could later auto-deploy on merge if desired.
