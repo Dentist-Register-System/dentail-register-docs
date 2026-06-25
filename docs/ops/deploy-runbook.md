@@ -1,5 +1,12 @@
 # Production Deploy Runbook — Register System
 
+> ### 🟢 LIVE since 2026-06-25 — read [`deployment-inventory.md`](./deployment-inventory.md) first
+> That doc has **every live URL, service, and ID** + the as-built architecture. **This runbook was written as the original *plan* and the as-built setup deviates in key ways:**
+> - **Frontend runs on Render, NOT Vercel** (Hobby can't deploy private-org repos) — so ignore the Vercel-specific steps below; the FE is a Render Blueprint (`register-web`) exactly like the backend.
+> - **DB/Auth is a separate beta Supabase project** `register-beta` (`wmfvsrujgzbcucwmlcrs`), not the project hard-coded in the example `render.yaml` below.
+> - **Cron tick + hook worker are deferred** (SP5.1/#116) — skip Phase 0.5 / `cron` for now.
+> Use this doc for the *setup concepts + troubleshooting*; use the inventory for *what's actually live* and [`release-playbook.md`](./release-playbook.md) for *how to release*.
+
 > Companion to `docs/specs/2026-06-23-production-deployment-design.md` (issue #121).
 > Model: **one-time manual setup (accounts + OAuth + tokens), then an idempotent script for the repeatable steps.** Tags: **[MANUAL]** = you, in a browser/terminal · **[SCRIPT]** = `docs/ops/deploy.sh` · **[ASSISTED]** = Claude via MCP/CLI.
 
