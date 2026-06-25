@@ -6,7 +6,9 @@
 
 **Architecture:** Pure, unit-testable helpers compute a typed `MissingItem[]` per entity (mirroring `computeClinicCompleteness`). A single reusable `<MissingInfoCard>` renders them — calm/amber, icon+text, collapse-when->2, auto-clear, per-item Fix. The patient card mounts on `patient-detail` (replacing #59's banner) and deep-links into a `focusField`-aware `EditPatientDialog`. The appointment helper + card are built and tested now; the appointment **mount** is gated on #139's day-of surface.
 
-**Tech Stack:** Next.js (App Router), React + TS, react-i18next, Tailwind v4 semantic tokens, base-ui primitives, Vitest + React Testing Library, Playwright. Spec: `docs/specs/2026-06-25-missing-info-detection-design.md`. Mockups (directional) on #63.
+**Tech Stack:** Next.js (App Router), React + TS, react-i18next, Tailwind v4 semantic tokens, base-ui primitives, **Playwright e2e** (the repo's only FE test runner). Spec: `docs/specs/2026-06-25-missing-info-detection-design.md`. Mockups (directional) on #63.
+
+> **⚠️ TEST CONVENTION (corrected 2026-06-25):** This repo has **no Vitest** — FE tests are **Playwright e2e only** (see `tests/e2e/clinic-completeness.spec.ts`, which is how the #39 pure helper is verified). **Do not add Vitest in this slice** (QA session owns adopting it). Where a task below shows `npx vitest run …`, realize it instead as a **Playwright e2e spec** under `tests/e2e/` that exercises the helper's behaviour through the rendered UI (incomplete patient → card shows the right items → fixing a field clears it). Pure-helper unit assertions live inside those e2e flows.
 
 ## Global Constraints
 
