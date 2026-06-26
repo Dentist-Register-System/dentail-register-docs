@@ -21,6 +21,11 @@ screens** (see the roadmap).
    (foundation → component library → app shell → feature screens), with screen work deferred
    until the foundation lands.
 
+**UX Standards Runbook (the bar every UI flow is tested against):**
+[`../testing/ux-standards-runbook.md`](../testing/ux-standards-runbook.md) — Nielsen–Molich
+heuristics, WCAG 2.2 AA, Material 3 / Apple HIG touch targets, Baymard form usability, ISO 9241-11.
+Consult it for any UI design, build, or test work (see Golden Rule §17.0).
+
 Implementation plan (Phase 0): `../docs/plans/2026-06-18-design-system-foundation-plan.md`.
 
 ## Core principles (at a glance)

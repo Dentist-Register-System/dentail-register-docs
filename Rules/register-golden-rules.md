@@ -807,6 +807,13 @@ per-page custom CSS, `.module.css`, styled-jsx, or one-off color/spacing — com
 components + templates. Authoritative spec: `docs/specs/2026-06-18-ui-redesign-m3-design.md`
 (`Design/01–05` are being rewritten to this M3 language).
 
+**UX-standards bar (every UI task — design, build, AND test).** Every UI flow must meet the
+published industry standards codified in **`testing/ux-standards-runbook.md`** — Nielsen–Molich's
+10 usability heuristics, WCAG 2.2 Level AA, Material 3 / Apple HIG touch targets, and Baymard form
+usability. Usability is treated as correctness, not opinion. Consult the runbook for any UI design,
+implementation, or test work; where it and a Golden Rule overlap, the (usually stricter) Golden
+Rule is the binding local expression.
+
 ## Rule 17.1 — Follow the design system.
 
 All UI must follow the Register Design System (philosophy, tokens, components, theme, cross-platform).
