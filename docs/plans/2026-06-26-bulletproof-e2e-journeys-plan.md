@@ -4,9 +4,9 @@
 
 **Goal:** Rebuild the `register-test-suite` E2E suite so a green run is authoritative — every journey verifies UI + backend (API **and** invariant DB) + navigation + negative, vacuous tests are structurally impossible, and every UX flow is checked against the UX Standards Runbook.
 
-**Architecture:** A two-tier **journey catalogue** (`journeys/*.journey.yaml`) co-located in the suite drives hand-written Playwright tests through a thin `journeyTest()` wrapper whose layer-tagged `assert.*` helpers are the assertion points. A **static guard** fails the build if any journey lacks a test or any declared layer lacks an assertion. New **API read-back** (authenticated, as the role) and **read-only DB** helpers verify backend reality. Foundation is built TDD-first (Phase 0); journeys are then rewritten one at a time through an empirical author→run→triage→confirm loop (Phases 1+).
+**Architecture:** A two-tier **journey catalogue** (`journeys/*.journey.json`) co-located in the suite drives hand-written Playwright tests through a thin `journeyTest()` wrapper whose layer-tagged `assert.*` helpers are the assertion points. A **static guard** fails the build if any journey lacks a test or any declared layer lacks an assertion. New **API read-back** (authenticated, as the role) and **read-only DB** helpers verify backend reality. Foundation is built TDD-first (Phase 0); journeys are then rewritten one at a time through an empirical author→run→triage→confirm loop (Phases 1+).
 
-**Tech Stack:** TypeScript, Playwright, Vitest (unit/guard), `pg` (node-postgres, MIT) for DB read-back, `@cucumber/gherkin` (already present) replaced/augmented by a small YAML journey loader (`yaml`, MIT), Zod (already present) for journey schema validation.
+**Tech Stack:** TypeScript, Playwright, Vitest (unit/guard), `pg` (node-postgres, MIT) for DB read-back, JSON journey files parsed with stdlib `JSON.parse` (no new parser dep), Zod (already present) for journey schema validation.
 
 ## Global Constraints
 
@@ -14,7 +14,7 @@
 - **Reserved ports — TEST SUITE ONLY:** Postgres **5434**, backend **8001**, frontend **3001**. Never dev ports (5433/8000/3000). (Golden Rule 10.6)
 - **`e2e` marker:** all data `[E2E]`-prefixed / `e2e+…@<domain>` / `-e2e`; DB access is **read-only**; teardown owned by the suite. (Golden Rule 10.7)
 - **No mocks** for product behaviour — real UI, real API, real DB. (README invariant; Golden Rule 10.3 = mocks are for unit tests only)
-- **Permissive-OSS deps only** (MIT/Apache/BSD/ISC). New deps: `pg` (MIT), `yaml` (ISC) — both pass. Never commit secrets.
+- **Permissive-OSS deps only** (MIT/Apache/BSD/ISC). One new dep: `pg` (MIT) for DB read-back. Journeys are JSON (stdlib `JSON.parse`, no new parser dep — ponytail). Never commit secrets.
 - **Triple-layer mandatory** per journey: `ui` + `api` + `db` (where the op persists/transitions) + `nav` + `neg`. No failure-swallowing (`.catch(()=>{})`). No count-only assertions.
 - **UX bar:** every journey walked against `dentail-register-docs/testing/ux-standards-runbook.md`; [AUTO] items asserted, [HEURISTIC] violations filed.
 - **Spec:** `dentail-register-docs/docs/specs/2026-06-26-bulletproof-e2e-journeys-design.md` is the source of truth for this plan.
@@ -25,7 +25,7 @@
 
 **Phase 0 — foundation (new):**
 - `src/journeys/schema.ts` — Zod schema + TS types for a journey YAML.
-- `src/journeys/loader.ts` — load + validate `journeys/*.journey.yaml`; helpers (`declaredLayers`, `allJourneyIds`).
+- `src/journeys/loader.ts` — load + validate `journeys/*.journey.json`; helpers (`declaredLayers`, `allJourneyIds`).
 - `src/journeys/journey-test.ts` — `journeyTest(id, fn)` wrapper + layer-tagged `assert.*` helpers (the assertion points).
 - `src/api/as-user.ts` — `tokenFromPage(page)` + `apiAs(page)` → authenticated `ApiClient` for the current role.
 - `src/db/client.ts` — read-only `pg` query helper against the 5434 Postgres (`dbQuery`, `dbOne`).
@@ -36,7 +36,7 @@
 - `package.json` (modify) — add `pg`, `@types/pg`, `yaml`.
 
 **Phase 1+ — journeys (per journey):**
-- `journeys/<id>.journey.yaml` — the journey definition.
+- `journeys/<id>.journey.json` — the journey definition.
 - `tests/functional/<area>.spec.ts` (rewrite) — the `journeyTest` implementation.
 - `src/pages/*` (modify) — page-object actions, with swallows removed.
 
@@ -52,7 +52,7 @@
 **Files:**
 - Create: `src/journeys/schema.ts`, `src/journeys/loader.ts`
 - Test: `tests-unit/journeys-loader.test.ts`
-- Create (fixture): `tests-unit/fixtures/sample.journey.yaml`
+- Create (fixture): `tests-unit/fixtures/sample.journey.json`
 
 **Interfaces:**
 - Produces: `type Journey = { id: string; title: string; tier: "atomic"|"composite"; persona: { role: Role; archetype: "solo"|"multi"|"any" }; preconditions: string[]; chains?: string[]; steps: JourneyStep[] }`; `type JourneyStep = { action: string; expect?: Partial<Record<"ui"|"api"|"db"|"nav"|"neg", string>> }`; `loadJourneys(dir: string): Journey[]`; `declaredLayers(j: Journey): Set<Layer>`; `type Layer = "ui"|"api"|"db"|"nav"|"neg"`.
@@ -81,23 +81,19 @@ describe("journey loader", () => {
 
 - [ ] **Step 2: Create the fixture**
 
-```yaml
-# tests-unit/fixtures/sample.journey.yaml
-id: sample.create
-title: Sample create
-tier: atomic
-persona: { role: assistant, archetype: multi }
-preconditions:
-  - Signed in
-steps:
-  - action: page.openNew
-    expect:
-      ui: dialog visible
-      nav: still on /x
-  - action: page.submit
-    expect:
-      api: GET /x returns the row
-      neg: no error toast
+```json
+// tests-unit/fixtures/sample.journey.json
+{
+  "id": "sample.create",
+  "title": "Sample create",
+  "tier": "atomic",
+  "persona": { "role": "assistant", "archetype": "multi" },
+  "preconditions": ["Signed in"],
+  "steps": [
+    { "action": "page.openNew", "expect": { "ui": "dialog visible", "nav": "still on /x" } },
+    { "action": "page.submit", "expect": { "api": "GET /x returns the row", "neg": "no error toast" } }
+  ]
+}
 ```
 
 - [ ] **Step 3: Run test to verify it fails**
@@ -144,13 +140,12 @@ export type JourneyStep = z.infer<typeof JourneyStepSchema>;
 // src/journeys/loader.ts
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { parse } from "yaml";
 import { JourneySchema, LAYERS, type Journey, type Layer } from "./schema.js";
 
 export function loadJourneys(dir: string): Journey[] {
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".journey.yaml"))
-    .map((f) => JourneySchema.parse(parse(readFileSync(path.join(dir, f), "utf8"))));
+    .filter((f) => f.endsWith(".journey.json"))
+    .map((f) => JourneySchema.parse(JSON.parse(readFileSync(path.join(dir, f), "utf8"))));
 }
 
 export function declaredLayers(j: Journey): Set<Layer> {
@@ -165,19 +160,15 @@ export function allJourneyIds(journeys: Journey[]): string[] {
 }
 ```
 
-- [ ] **Step 6: Install deps**
+- [ ] **Step 6: No new dep**
 
-Run: `npm install yaml && npm install -D @types/node`
-Expected: `yaml` (ISC) added. (Confirm license in `node_modules/yaml/package.json`.)
+Journeys are JSON — parsed with stdlib `JSON.parse`. No parser dependency to install (ponytail: stdlib over a new dep).
 
 - [ ] **Step 7: Add the `bad` fixture (missing `steps`)**
 
-```yaml
-# tests-unit/fixtures/bad/broken.journey.yaml
-id: broken
-title: Broken
-tier: atomic
-persona: { role: assistant, archetype: any }
+```json
+// tests-unit/fixtures/bad/broken.journey.json  (missing required `steps`)
+{ "id": "broken", "title": "Broken", "tier": "atomic", "persona": { "role": "assistant", "archetype": "any" } }
 ```
 
 - [ ] **Step 8: Run test to verify it passes**
@@ -188,8 +179,8 @@ Expected: PASS (2 tests), typecheck clean.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add src/journeys/schema.ts src/journeys/loader.ts tests-unit/journeys-loader.test.ts tests-unit/fixtures package.json package-lock.json
-git commit -m "feat(journeys): journey YAML schema + loader"
+git add src/journeys/schema.ts src/journeys/loader.ts tests-unit/journeys-loader.test.ts tests-unit/fixtures
+git commit -m "feat(journeys): journey JSON schema + loader"
 ```
 
 ---
@@ -645,7 +636,7 @@ git commit -m "feat(guard): ban failure-swallowing (scoped to tests; pages added
 This task establishes the **per-journey loop** every later journey repeats. Login is first because every other journey's session depends on it.
 
 **Files:**
-- Create: `journeys/auth.login_email.journey.yaml`
+- Create: `journeys/auth.login_email.journey.json`
 - Rewrite: `tests/functional/auth.spec.ts` (new; uses `journeyTest`)
 - Reference (do not edit): `src/pages/login-page.ts` (already switches off the default Phone tab to Email)
 
@@ -655,7 +646,7 @@ This task establishes the **per-journey loop** every later journey repeats. Logi
 - [ ] **Step 1: Author the journey YAML (grounded in the real login UI)**
 
 ```yaml
-# journeys/auth.login_email.journey.yaml
+# journeys/auth.login_email.journey.json
 id: auth.login_email
 title: Log in with email and password
 tier: atomic
@@ -736,7 +727,7 @@ Temporarily break one assertion's premise (e.g., point `loginWithEmail` at a wro
 - [ ] **Step 8: Commit**
 
 ```bash
-git add journeys/auth.login_email.journey.yaml tests/functional/auth.spec.ts
+git add journeys/auth.login_email.journey.json tests/functional/auth.spec.ts
 git commit -m "test(journey): auth.login_email — triple-layer, proven to fail on injected bug"
 ```
 
