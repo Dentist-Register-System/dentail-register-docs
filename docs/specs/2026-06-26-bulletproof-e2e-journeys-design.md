@@ -4,7 +4,7 @@
 - **Owner persona:** QA / DevOps Gatekeeper
 - **Status:** Design (approved 2026-06-26) — implementation plan to follow
 - **Repo of record for tests:** `register-test-suite`
-- **Related:** `register-test-suite` (E2E harness, issue #103), `testing/test-rails-v2.md`, `testing/acceptance-test-plan-v2.md`, `Rules/register-golden-rules.md` (§5 capacity, §6 state transitions, §7 audit, §10 testing)
+- **Related:** `register-test-suite` (E2E harness, issue #103), `testing/test-rails-v2.md`, `testing/acceptance-test-plan-v2.md`, **`testing/ux-standards-runbook.md`** (UX bar for all flows), `Rules/register-golden-rules.md` (§5 capacity, §6 state transitions, §7 audit, §10 testing, §12/§17/§18 UI-UX)
 
 ---
 
@@ -25,6 +25,7 @@ This is not a "write more tests" problem. The journeys are thin (single-line `Th
 - A green run is **authoritative**: UI, backend (API **and** invariant DB), and navigation are all verified.
 - The suite catches **UI bugs** (wrong-workflow routing), **backend bugs** (no persistence, wrong state, missing audit), and **regressions** — deterministically, every run.
 - It is **impossible to claim a check that isn't made** (a build-failing guard enforces this).
+- **Every UX flow is tested against published industry standards** — Nielsen–Molich heuristics, WCAG 2.2 AA, Material 3 / Apple HIG, and Baymard form guidelines — codified in `testing/ux-standards-runbook.md`. Usability is treated as correctness, not opinion.
 
 **Non-goals (this effort)**
 - Pixel/visual snapshot regression (deferred until UI stabilises post-launch; the Claude intelligence-diff remains the soft net for visual/ease drift).
@@ -113,6 +114,7 @@ steps:
    - **Navigation is asserted** on any step where a control moves the user — this is the direct catch for "button → wrong workflow."
    - **Negative assertions** confirm the *wrong* thing did **not** happen (no error toast, no duplicate row, no unexpected navigation).
 3. **Backend invariants map to the P0 rails** (`testing/test-rails-v2.md`): `db` expectations cover **Audit** (an `audit_event_beta` row with actor + prev→new state, append-only — Golden Rule §7), **Capacity & Concurrency** (capacity never exceeds config; idempotent — §5.2/§6.4), and **Stale State** (transition validity — §6.1). The suite thereby *enforces* the rails rather than hoping for them.
+4. **UX-standards conformance is a verification dimension, not an afterthought.** Every journey's flow is walked against `testing/ux-standards-runbook.md`. Its **[AUTO]** items (success card present per Rule 18.5, destructive-action confirmation, right translated error, touch-target size, visible focus, no false-success, no blocked paste on auth fields) fold into the journey's `ui`/`neg` assertions; its **[HEURISTIC]** items (aesthetic, tone, cross-platform parity) feed the intelligence review and are filed as `[BUG]`. *Deterministically observable → assertion; judged → filed finding; neither is skipped.*
 
 ## 6. Catalogue, helpers & the guard (Buckets D, C, F)
 
@@ -172,6 +174,7 @@ The rewrite is **not a code-dump**. Each journey goes through this loop, one at 
 - [ ] Wave 1 journeys rewritten through the iterative loop; each proven to fail on injected bug.
 - [ ] Wave 2 journeys rewritten.
 - [ ] All `.catch(() => {})` failure-swallows removed; no count-only assertions remain.
+- [ ] Each journey's flow walked against `testing/ux-standards-runbook.md`; [AUTO] items asserted, [HEURISTIC] violations filed.
 - [ ] Any product bugs found are filed `[BUG][E2E testing]`; no product code changed without explicit approval.
 
 ## 11. Open items (tracked, not blocking the spec)
