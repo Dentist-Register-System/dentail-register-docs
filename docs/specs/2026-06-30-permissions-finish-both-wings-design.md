@@ -3,7 +3,7 @@
 - **Status:** Design — awaiting approval (no code written)
 - **Date:** 2026-06-30
 - **Author:** Dev session (Ponytail)
-- **Scoreboard:** `docs/architecture/system-decision-trees.html` (the temple's living picture)
+- **Scoreboard:** `docs/architecture/temple-map.html` (the temple's living picture)
 - **Doctrine:** `Rules/sentinel-rules.md` (created by this work) + the Golden Rules
 
 ---
@@ -142,4 +142,4 @@ Backend PRs (1,2) merge and deploy before frontend PRs (3,4) — Golden Rule 19.
 
 ## 12. Open question
 
-- The scoreboard file is `system-decision-trees.html`. We have been calling it the "matrix dashboard" / "picture of the temple." Optional trivial `git mv` to a clearer name (e.g. `temple-map.html` or `decision-map.html`) — non-blocking, decide separately.
+- Resolved: the scoreboard file is named `temple-map.html` (the picture of the temple).
