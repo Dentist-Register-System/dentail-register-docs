@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Register — System Decision Trees</title>
+<title>Register — Temple Map</title>
 <style>
   :root{
     --bg:#0f1117; --panel:#171a23; --panel2:#1d212c; --line:#2a2f3c;
@@ -82,12 +82,27 @@
   .foot{margin-top:40px;color:var(--faint);font-size:12.5px;border-top:1px solid var(--line);padding-top:18px}
   .src{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
   .big{font-size:17px}
+  .sub2{font-size:14.5px;color:var(--ink);font-weight:700;margin:26px 0 6px;letter-spacing:-.2px}
+  .mermaid{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;margin:10px 0;overflow-x:auto}
+  .mcap{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin:2px 0 0}
+  .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:760px){.mgrid{grid-template-columns:1fr}}
+  details.kill{border:1px solid var(--line);border-radius:10px;padding:10px 16px;margin:14px 0;background:var(--panel)}
+  details.kill summary{cursor:pointer;font-weight:700;color:var(--ink);font-size:14px}
+  details.kill table{font-size:12px;margin-top:10px}
+  details.kill td,details.kill th{padding:6px 9px}
+  tr.grp td{background:rgba(179,135,255,.07);color:var(--target);font-family:var(--mono);font-size:11.5px;font-weight:700}
+  .tag{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;border:1px solid var(--line)}
+  .tag.o{color:var(--bad);border-color:rgba(239,90,111,.4)} .tag.c{color:var(--mut)} .tag.keep{color:var(--good);border-color:rgba(38,208,124,.4)}
+  .warncell{color:var(--warn);font-weight:700}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true,theme:'dark',securityLevel:'loose',flowchart:{useMaxWidth:true},themeVariables:{fontSize:'13px',primaryColor:'#1d212c',primaryBorderColor:'#2a2f3c',lineColor:'#6b7280',primaryTextColor:'#e6e8ee'}});</script>
 </head>
 <body>
 <div class="wrap">
 
-  <h1>Register — System Decision Trees</h1>
+  <h1>Register — Temple Map</h1>
   <p class="sub">Where does each functionality go to answer a question — one engine, or a scavenger hunt across the codebase? This is the picture of the temple: the one-stop, honest map of every core system and where its decisions actually live.</p>
   <p class="src">Source of truth: the code itself — <code>dentist-registry-backend</code> (engines) + <code>dentist-registry-frontend</code> (the client that must only ask). Permission matrices below are computed by executing the actual code. Roaming maps cited <code>file:line</code>. Snapshot 2026-06-30.</p>
 
@@ -233,18 +248,178 @@
   </div>
   <p class="src">Same 45 answers. Six places vs one. That difference — not the answers — is the whole point.</p>
 
-  <h3>1b · Permissions — the FE wing <span class="pill bad">client still decides · 17 sites</span></h3>
-  <p class="lead">The backend is single-source, but the <b>frontend re-derives permissions client-side</b> instead of asking. <code>GET /api/v1/me</code> returns <b>no capabilities</b>, so <b>17 origin sites</b> branch on <code>memberships[0].role</code> (6 of them also interpreting clinic settings) — a second, drift-prone copy of the rules living in the client. The messenger pattern already exists in the repo (<code>useMemberCapabilities()</code> + <code>permissions-tab.tsx</code> render purely from <code>allowed</code>/<code>reason_code</code>) but is pointed only at "view <i>another</i> member's permissions," never "what may <i>I</i> do."</p>
-  <div class="roam">
-    <p class="q">🐕 "What may <i>I</i> do?" → <span class="count">17 places</span> in the FE re-derive it from <code>role</code></p>
-    <div class="hops">
-      <div class="hop"><span class="where">app/{settings,requests,today,page}.tsx</span><span class="what"><code>role === "owner"/"assistant"/"doctor"</code> gating nav, fetches, CTAs</span></div>
-      <div class="hop"><span class="where">features/scheduling/request-status.ts:58</span><span class="what"><code>canDecide()</code> — re-encodes the approve rule (role + <code>allow_staff_approval</code> + self) the engine already owns</span></div>
-      <div class="hop"><span class="where">features/{patients,team,invitations,doctors,assistants}/…</span><span class="what">canCoordinate / canBook / canEdit / canManageInvites — all from <code>role</code>, prop-drilled outward</span></div>
-      <div class="hop"><span class="where">components/shell/app-shell.tsx:36</span><span class="what">nav visibility from <code>role</code> + <code>allow_staff_manage_availability</code></span></div>
-    </div>
-    <p class="ref" style="padding-left:14px">→ Target: one <code>useMyCapabilities()</code> reading a new clinic-scoped <code>/me/capabilities</code>; every <code>role===</code> deleted; a FE sentinel guard fails CI on any client-side permission decision. (<code>kind === "doctor"</code> entity-type checks are <b>not</b> authz — they stay.)</p>
+  <h3>1b · Permissions — the FE wing <span class="pill bad">client still decides · ≈79 sites</span></h3>
+  <p class="lead">The backend is single-source — but the <b>frontend keeps its own copy of the rules and decides locally</b> instead of asking. <code>GET /api/v1/me</code> returns <b>no capabilities</b>, so the client re-derives every permission from <code>memberships[].role</code> (+ two clinic settings). Computed from the live code: <b>22 origin decisions</b> fan out through props into <b>~57 consumer sites</b> (buttons, tabs, nav, fetches, modal mounts) — <b>≈79 places total</b> that must be erased and replaced by one engine query. The messenger pattern already exists (<code>permissions-tab.tsx</code> renders straight from <code>useMemberCapabilities()</code>) — it is just never pointed at "what may <i>I</i> do."</p>
+
+  <div class="banner warn">
+    <span class="num">≈79</span>
+    <div><b>FE decision sites to demolish — 22 origins + ~57 consumers.</b> <span class="muted">And the client's copy has already <b>drifted</b>: 3 cells where the FE decides differently from the engine. Every site below becomes <code>cap("…").allowed</code> read from <code>/me/capabilities</code>. <code>kind === "doctor"</code> entity-type / self-identity / display-label checks are <b>not</b> authz and stay.</span></div>
   </div>
+
+  <p class="sub2">The FE matrix — what the client decides today, and where it lies</p>
+  <table class="cmp">
+    <thead><tr><th class="feath">FE decision (file:line)</th><th>Owner</th><th>Doctor</th><th>Assistant</th><th>vs&nbsp;engine</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Administer clinic / settings<small>settings/page.tsx:28 · administer_clinic</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-no">✕</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Coordinate (cancel/resend) booking<small>requests:19 · patient-detail:981 · coordinate_booking</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-yes">✓</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">View clinic / today schedule<small>today:43 · app-shell:41 · view_clinic_schedule</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-yes">✓</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Manage availability<small>doctors/[id]:39 · member-drawer:87 · manage_availability</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-self" title="own page/card only">●</span></td><td><span class="ic c-setting" title="allow_staff_manage_availability">⚙</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Book — from doctor-detail CTA<small>doctors/[id]:50 · create_booking</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-yes">✓</span></td><td><span class="warncell" title="engine: Doctor ● own slots">⚠ D1</span></td></tr>
+      <tr><td class="feat">Book — from patient-detail<small>patient-detail:983 · create_booking</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-self" title="needs own doctor_id">●</span></td><td><span class="ic c-yes">✓</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Approve / reject a request<small>request-status.ts:54 · decide_booking</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-self" title="own assigned row">●</span></td><td><span class="ic c-setting" title="allow_staff_approval">⚙</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Create own doctor profile<small>page.tsx:50 · self_create_doctor</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Edit a team member's record<small>team-table:394 · edit_doctor</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-no">✕</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Activate / deactivate / remove<small>team-table:395 · manage_doctors / manage_members</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-self" title="doctor table only, not assistants">◑</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Create an invite<small>invitations/permissions.ts:4 · create_invite</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-no">✕</span></td><td><span class="mt">≡</span></td></tr>
+      <tr><td class="feat">Manage invites (list/revoke/resend)<small>invitations/permissions.ts:4 · manage_invite</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-no">✕</span></td><td><span class="warncell" title="engine: Assistant ◆ doctor invites">⚠ D2</span></td></tr>
+      <tr><td class="feat">Reach the doctor-schedules surface<small>app-shell:35 · view vs manage_availability</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-setting" title="gated by allow_staff_manage_availability">⚙</span></td><td><span class="warncell" title="engine: view A ✓ unconditionally">⚠ D3</span></td></tr>
+      <tr><td class="feat">Settings deep-link on permissions tab<small>permissions-tab:105 · administer_clinic (link)</small></td><td><span class="ic c-yes">✓</span></td><td><span class="ic c-no">✕</span></td><td><span class="ic c-no">✕</span></td><td><span class="mt">≡</span></td></tr>
+    </tbody>
+  </table>
+  <p class="src">● own-resource only · ⚙ only if clinic setting on · ◑ depends on which team table · ≡ matches engine · <span class="warncell">⚠</span> diverges (see below).</p>
+
+  <p class="sub2">Where the FE secretly disagrees with the engine <span class="pill bad">3 drifted cells</span></p>
+  <div class="roam">
+    <p class="q"><span class="warncell">⚠ D1</span> — A doctor cannot book, and the FE contradicts itself <span class="count">create_booking · Doctor</span></p>
+    <div class="hops">
+      <div class="hop"><span class="where">doctors/[id]/page.tsx:50</span><span class="what">Book CTA shown only for <code>owner || assistant</code> → a doctor gets <b>no Book button</b>, even on their own page. Engine: <code>create_booking</code> Doctor ● (own slots) — allowed.</span></div>
+      <div class="hop"><span class="where">patient-detail.tsx:983</span><span class="what">the <b>same</b> action here gives Doctor ● — the two FE copies disagree with <i>each other</i>; only this one matches the engine.</span></div>
+    </div>
+  </div>
+  <div class="roam">
+    <p class="q"><span class="warncell">⚠ D2</span> — Assistants see zero invite surfaces <span class="count">manage_invite · Assistant</span></p>
+    <div class="hops">
+      <div class="hop"><span class="where">invitations/permissions.ts:4 → doctors-tabs.tsx:54,150</span><span class="what"><code>canManageInvites = role==="owner"</code> → an assistant sees no Invites tab, no pending-invites card, no invite button on the Doctors page. Engine: <code>manage_invite</code> Assistant ◆ — may manage <b>doctor</b> invites (resend/revoke).</span></div>
+    </div>
+  </div>
+  <div class="roam">
+    <p class="q"><span class="warncell">⚠ D3</span> — Assistants lose <i>read</i> access to doctor schedules <span class="count">view_clinic_schedule · Assistant</span></p>
+    <div class="hops">
+      <div class="hop"><span class="where">app-shell.tsx:35-37,40</span><span class="what">the clinic-schedules destination is gated by <code>allow_staff_manage_availability</code>; with it <b>off</b>, an assistant can't even navigate to view doctor availability. Engine separates <code>view_clinic_schedule</code> (Assistant ✓, unconditional) from <code>manage_availability</code> (⚙). The FE collapses view behind the manage setting.</span></div>
+    </div>
+  </div>
+
+  <p class="sub2">The coupled decisions — a flat cell can't tell the truth, so here are the real branch flows</p>
+  <div class="mgrid">
+    <div>
+      <pre class="mermaid">
+flowchart TD
+  Q["Approve / reject this request?"] --> R1{"role is owner?"}
+  R1 -- yes --> Y["allowed"]
+  R1 -- no --> R2{"my doctor_id equals row.doctor_id?"}
+  R2 -- yes --> Y
+  R2 -- no --> R3{"assistant AND allow_staff_approval?"}
+  R3 -- yes --> Y
+  R3 -- no --> N["denied"]
+  Y --> S{"status pending AND not expired?"}
+  S -- no --> H["buttons hidden"]
+  S -- yes --> Show["Approve / Reject shown"]
+</pre>
+      <p class="mcap">C2 · canDecide — request-status.ts:54 → request-row.tsx:392</p>
+    </div>
+    <div>
+      <pre class="mermaid">
+flowchart TD
+  Q["Edit this doctor's availability?"] --> R1{"role is owner?"}
+  R1 -- yes --> Y["allowed → Edit modal mounts"]
+  R1 -- no --> R2{"my doctor_id equals this page's doctor?"}
+  R2 -- yes --> Y
+  R2 -- no --> R3{"assistant AND allow_staff_manage_availability?"}
+  R3 -- yes --> Y
+  R3 -- no --> N["denied → Edit hidden"]
+</pre>
+      <p class="mcap">C1 · canEdit — doctors/[id]:39 → availability-summary-card.tsx:145</p>
+    </div>
+    <div>
+      <pre class="mermaid">
+flowchart TD
+  Q["Book an appointment for this patient?"] --> R1{"role is owner or assistant?"}
+  R1 -- yes --> Y["allowed"]
+  R1 -- no --> R2{"role is doctor AND has own doctor_id?"}
+  R2 -- yes --> Y2["allowed (doctor field locked to self)"]
+  R2 -- no --> N["denied → Book hidden"]
+</pre>
+      <p class="mcap">C3 · canBook — patient-detail.tsx:983 → :1070</p>
+    </div>
+    <div>
+      <pre class="mermaid">
+flowchart TD
+  Q["Activate / deactivate / remove this member?"] --> R1{"role is owner?"}
+  R1 -- yes --> Y["allowed"]
+  R1 -- no --> R2{"this is the doctor table AND role is assistant?"}
+  R2 -- yes --> Y
+  R2 -- no --> N["denied → actions menu hidden"]
+</pre>
+      <p class="mcap">C5 · canManage — team-table.tsx:395 → :399/427/453</p>
+    </div>
+  </div>
+  <p class="src">These four chain role + a clinic setting + a per-row identity fact (<code>doctor_id</code>) + status — which is exactly why they can't honestly be one matrix cell. In the target, the engine returns the decision (with <code>scope</code>); the FE only supplies the identity fact.</p>
+
+  <p class="sub2">The kill list — every site, the demolition map <span class="pill bad">22 origins → ≈79 total</span></p>
+  <details class="kill">
+    <summary>Expand the full demolition map (≈79 sites: 22 origins + ~57 consumers/pass-throughs)</summary>
+    <table>
+      <thead><tr><th>file:line</th><th>gates</th><th>traces to · capability</th><th>kind</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="4">O1 · canManageClinic (settings/page.tsx:28) · administer_clinic</td></tr>
+        <tr><td>settings/page.tsx:28</td><td>computes <code>role==="owner"</code></td><td>O1 administer_clinic</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>settings-shell.tsx:88,90</td><td>→ <code>canManage</code> to ClinicPane / SchedulingPane</td><td>O1</td><td><span class="tag c">passthru</span></td></tr>
+        <tr><td>clinic-pane.tsx:39,133,166</td><td>hides Edit affordance / Save button / edit section</td><td>O1</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>scheduling-pane.tsx:149,178,193,243,280</td><td>disables workflow select, both staff Switches, expiry input; hides Save</td><td>O1</td><td><span class="tag c">consumer</span></td></tr>
+        <tr class="grp"><td colspan="4">O2 · canCoordinate + allowStaffApproval (requests/page.tsx:15,19) · coordinate_booking / decide_booking</td></tr>
+        <tr><td>requests/page.tsx:15,19</td><td>computes <code>owner||assistant</code> + <code>allow_staff_approval</code></td><td>O2 coordinate_booking / decide-input</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>requests/page.tsx:27-30</td><td>→ role/myDoctorId/allowStaffApproval/canCoordinate to RequestsList</td><td>O2</td><td><span class="tag c">passthru</span></td></tr>
+        <tr><td>requests-list.tsx:243</td><td>hides "New booking" CTA</td><td>O2 coordinate_booking</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>requests-list.tsx:355,356</td><td>computes per-row <code>canDecide</code>; → canCoordinate to RequestRow</td><td>O7 / O2</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>request-row.tsx:242,243,244</td><td>showApproveReject / canCancel / canResend</td><td>O7 decide · O2 coordinate</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>request-row.tsx:91,179,190,392</td><td>overflow itemCount; Cancel item; Resend item; Approve/Reject buttons</td><td>O2 / O7</td><td><span class="tag c">consumer</span></td></tr>
+        <tr class="grp"><td colspan="4">O3 · isAllowed (today/page.tsx:43) · view_clinic_schedule</td></tr>
+        <tr><td>today/page.tsx:43</td><td>computes <code>owner||assistant</code></td><td>O3 view_clinic_schedule</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>today/page.tsx:44</td><td>gates <code>useTodaySchedule</code> <b>fetch</b> (passes "")</td><td>O3</td><td><span class="tag c">consumer·fetch</span></td></tr>
+        <tr><td>today/page.tsx:56</td><td>gates page body vs not-available message</td><td>O3</td><td><span class="tag c">consumer·route</span></td></tr>
+        <tr class="grp"><td colspan="4">O4 · canEdit + Book CTA (doctors/[id]:39,50) · manage_availability / create_booking</td></tr>
+        <tr><td>doctors/[id]/page.tsx:39</td><td>computes owner||own||assistant⚙</td><td>O4 manage_availability</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>doctors/[id]/page.tsx:50</td><td>hides Book CTA (<b>D1 divergence</b>)</td><td>O4 create_booking</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>doctors/[id]/page.tsx:65,68</td><td>→ canEdit to card; gates EditAvailabilityModal mount</td><td>O4</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>availability-summary-card.tsx:145,213</td><td>hides Edit button; hides empty-state CTA</td><td>O4</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>availability-summary-card.tsx:229,81</td><td>TimeOffStrip viewAll — <b>not gated</b>, inert only because modal mount is</td><td>O4</td><td><span class="tag c">leak</span></td></tr>
+        <tr class="grp"><td colspan="4">O5 · CreateProfileBanner (page.tsx:50-51) · self_create_doctor</td></tr>
+        <tr><td>page.tsx:50-51</td><td>renders banner: <code>!doctor_id &amp;&amp; (owner||doctor)</code></td><td>O5 self_create_doctor</td><td><span class="tag o">origin</span></td></tr>
+        <tr class="grp"><td colspan="4">O6 · patient-detail decideCtx / canCoordinate / canBook (976-983)</td></tr>
+        <tr><td>patient-detail.tsx:976-979</td><td>computes decideCtx</td><td>O6 decide_booking</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>patient-detail.tsx:981,983</td><td>computes canCoordinate; canBook</td><td>O6 coordinate / create_booking</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>patient-detail.tsx:1070</td><td>hides Book button</td><td>O6 create_booking</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>patient-detail.tsx:858,859</td><td>per-row canDecide; → canCoordinate to RequestRow</td><td>O7 / O6</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>patient-detail.tsx:1129-1146</td><td>→ props to Overview/AppointmentsTab (Overview = dead pass)</td><td>O6</td><td><span class="tag c">passthru</span></td></tr>
+        <tr class="grp"><td colspan="4">O7 · canDecide engine-copy (request-status.ts:54-61) · decide_booking</td></tr>
+        <tr><td>request-status.ts:54-61</td><td>pure fn: owner / own-doctor_id / assistant⚙ — a second copy of the engine rule</td><td>O7 decide_booking</td><td><span class="tag o">origin</span></td></tr>
+        <tr class="grp"><td colspan="4">O9 · showManageAvailability (member-profile-drawer.tsx:87) · manage_availability</td></tr>
+        <tr><td>member-profile-drawer.tsx:87-91</td><td>computes owner||own||assistant⚙</td><td>O9 manage_availability</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>member-profile-drawer.tsx:93,190,201</td><td>showFooter combiner; gates footer; gates Manage-Availability button</td><td>O9</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>member-profile-drawer.tsx:182</td><td>→ viewerRole to PermissionsTab</td><td>O14</td><td><span class="tag c">passthru</span></td></tr>
+        <tr class="grp"><td colspan="4">O10 · team-table canEdit + canManage (394-397) · edit_doctor / manage_doctors / manage_members</td></tr>
+        <tr><td>team-table.tsx:394,395-397</td><td>computes owner; owner||(kind=doctor &amp;&amp; assistant)</td><td>O10</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>team-table.tsx:399,415,427,448,453</td><td>hides actions menu / Edit / Activate-Deactivate / separator / Remove</td><td>O10</td><td><span class="tag c">consumer</span></td></tr>
+        <tr class="grp"><td colspan="4">O11 · canManageInvites (invitations/permissions.ts:4) · create_invite / manage_invite</td></tr>
+        <tr><td>invitations/permissions.ts:4</td><td>pure fn <code>role==="owner"</code> (<b>D2 divergence</b> on manage_invite)</td><td>O11</td><td><span class="tag o">origin</span></td></tr>
+        <tr class="grp"><td colspan="4">O12 · showInvites (assistants-tabs:54 &amp; doctors-tabs:54) · create_invite / manage_invite</td></tr>
+        <tr><td>assistants-tabs.tsx:54 · doctors-tabs.tsx:54</td><td>computes <code>canManageInvites(role)</code></td><td>O11→O12</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>assistants-tabs.tsx:62,72,150,191</td><td>hides invite button / Invites tab / pending-invites card / tab panel</td><td>O12</td><td><span class="tag c">consumer</span></td></tr>
+        <tr><td>doctors-tabs.tsx:62,72,150,191</td><td>hides invite button / Invites tab / pending-invites card (D2) / tab panel</td><td>O12</td><td><span class="tag c">consumer</span></td></tr>
+        <tr class="grp"><td colspan="4">O13 · app-shell nav (35-41) · manage_availability / view_clinic_schedule</td></tr>
+        <tr><td>app-shell.tsx:35-37</td><td>computes canDoctorsSchedules (owner||assistant⚙ — <b>D3</b>)</td><td>O13</td><td><span class="tag o">origin</span></td></tr>
+        <tr><td>app-shell.tsx:40,41</td><td>gates clinic-schedules nav; gates today nav (inline owner||assistant)</td><td>O13 / O3</td><td><span class="tag c">consumer·nav</span></td></tr>
+        <tr class="grp"><td colspan="4">O14 · showSettingsLink (permissions-tab.tsx:105) · administer_clinic</td></tr>
+        <tr><td>permissions-tab.tsx:105,139</td><td>computes <code>!allowed &amp;&amp; setting_key &amp;&amp; owner</code>; renders settings deep-link</td><td>O14 administer_clinic</td><td><span class="tag o">origin</span></td></tr>
+        <tr class="grp"><td colspan="4">KEEP — not authz (do NOT delete)</td></tr>
+        <tr><td>book-appointment-flow.tsx:102-106</td><td>identity self-lock (doctor field = self)</td><td>identity</td><td><span class="tag keep">keep</span></td></tr>
+        <tr><td>member-profile-drawer.tsx:83-84,192</td><td>edit-own-profile (self-resource)</td><td>identity</td><td><span class="tag keep">keep</span></td></tr>
+        <tr><td>app-shell.tsx:39</td><td>my-schedule nav = hasDoctorProfile</td><td>identity</td><td><span class="tag keep">keep</span></td></tr>
+        <tr><td>permissions-tab.tsx:111,127,133,154</td><td>renders <code>cap.allowed</code> straight from <code>useMemberCapabilities</code> — <b>the one correct pattern</b>, the model for all the rest</td><td>BE-authoritative</td><td><span class="tag keep">keep</span></td></tr>
+      </tbody>
+    </table>
+    <p class="src" style="margin-top:10px">Source: every row read from the live FE code 2026-06-30. The target erases all <span class="tag o">origin</span>/<span class="tag c">consumer</span>/passthru/leak rows; the <span class="tag keep">keep</span> rows are identity/self-resource facts the engine legitimately leaves to the client.</p>
+  </details>
 
   <!-- ============================ APPOINTMENTS ============================ -->
   <h2>2 · Appointments <span class="pill bad">No engine · splattered</span></h2>
@@ -309,7 +484,7 @@
     <thead><tr><th>System</th><th>Engine?</th><th>Status</th></tr></thead>
     <tbody>
       <tr><td class="feat">Permissions — BE engine</td><td><span class="pill good">Wired &amp; merged ✓</span></td><td class="muted"><code>can()</code> single-source on <code>main</code> + anti-bypass CI guard live (#52/#53/#54)</td></tr>
-      <tr><td class="feat">Permissions — FE wing</td><td><span class="pill bad">Client still decides</span></td><td class="muted"><b>current front</b>: add <code>/me/capabilities</code> → <code>useMyCapabilities()</code> → delete 17 <code>role===</code> sites → FE sentinel guard</td></tr>
+      <tr><td class="feat">Permissions — FE wing</td><td><span class="pill bad">Client still decides · ≈79 sites · 3 drifted</span></td><td class="muted"><b>current front</b>: add <code>/me/capabilities</code> → <code>useMyCapabilities()</code> → erase 22 origins + ~57 consumers → FE sentinel guard. Already 3 cells diverge from the engine (D1/D2/D3 above).</td></tr>
       <tr><td class="feat">Permissions — Rule 9 (typed decisions)</td><td><span class="pill warn">Pending</span></td><td class="muted"><code>can() → bool</code> becomes <code>can() → Decision{allowed, reason, …}</code> across engine + 284 tests + call sites</td></tr>
       <tr><td class="feat">Appointments</td><td><span class="pill bad">None</span></td><td class="muted">after permissions: spec the state machine → characterization net → build</td></tr>
       <tr><td class="feat">Availability</td><td><span class="pill bad">None</span></td><td class="muted">after appointments: one day-availability resolver</td></tr>
