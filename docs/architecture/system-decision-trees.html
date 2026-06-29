@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Register — System Decision Trees</title>
+<style>
+  :root{
+    --bg:#0f1117; --panel:#171a23; --panel2:#1d212c; --line:#2a2f3c;
+    --ink:#e6e8ee; --mut:#9aa3b2; --faint:#6b7280;
+    --yes:#26d07c; --no:#ef5a6f; --self:#4ea1ff; --setting:#f2b134; --target:#b387ff;
+    --good:#26d07c; --warn:#f2b134; --bad:#ef5a6f;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 96px}
+  h1{font-size:30px;margin:0 0 6px;letter-spacing:-.5px}
+  h2{font-size:22px;margin:48px 0 4px;letter-spacing:-.3px}
+  h3{font-size:15px;margin:26px 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+  .sub{color:var(--mut);margin:0 0 8px}
+  code,.mono{font-family:var(--mono);font-size:.86em}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;vertical-align:middle}
+  .pill.good{background:rgba(38,208,124,.13);color:var(--good);border:1px solid rgba(38,208,124,.3)}
+  .pill.warn{background:rgba(242,177,52,.13);color:var(--warn);border:1px solid rgba(242,177,52,.3)}
+  .pill.bad{background:rgba(239,90,111,.13);color:var(--bad);border:1px solid rgba(239,90,111,.3)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:16px 0}
+  .panel.tight{padding:14px 18px}
+  .lead{font-size:16px;color:var(--ink)}
+  .muted{color:var(--mut)}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 0;font-size:13px;color:var(--mut)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  /* decision flow */
+  .flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:8px 0}
+  .node{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 14px;font-size:14px}
+  .node.q{border-style:dashed;color:var(--mut)}
+  .node.engine{border-color:rgba(38,208,124,.45);background:rgba(38,208,124,.08);font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .node.ans{border-color:rgba(78,161,255,.4);background:rgba(78,161,255,.08)}
+  .arrow{color:var(--faint);font-size:18px}
+
+  /* matrix */
+  table{border-collapse:collapse;width:100%;margin:6px 0;font-size:13.5px}
+  th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left}
+  thead th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  td.feat{color:var(--ink)}
+  td.feat small{display:block;color:var(--faint);font-family:var(--mono);font-size:11px}
+  .cell{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+  .c-yes{color:var(--yes)} .c-no{color:var(--faint);font-weight:500} .c-self{color:var(--self)}
+  .c-setting{color:var(--setting)} .c-target{color:var(--target)}
+  td.role{white-space:nowrap}
+
+  /* roaming */
+  .roam{border-left:3px solid var(--bad);padding:2px 0 2px 0;margin:14px 0}
+  .roam .q{font-weight:600;margin:0 0 8px;padding-left:14px}
+  .hops{display:flex;flex-direction:column;gap:7px;padding-left:14px}
+  .hop{display:flex;gap:10px;align-items:flex-start;font-size:13.5px}
+  .hop .where{font-family:var(--mono);font-size:12px;color:var(--target);min-width:230px}
+  .hop .what{color:var(--mut)}
+  .count{color:var(--bad);font-weight:700}
+  .ref{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}
+  @media(max-width:760px){.vs{grid-template-columns:1fr}.hop .where{min-width:unset}}
+  .vs .box{border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .vs .box.bad{border-color:rgba(239,90,111,.35)}
+  .vs .box.good{border-color:rgba(38,208,124,.35)}
+  .vs h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+  .vs.bad h4{color:var(--bad)} .box.good h4{color:var(--good)}
+  ul.tight{margin:6px 0;padding-left:18px} ul.tight li{margin:3px 0}
+  .foot{margin-top:40px;color:var(--faint);font-size:12.5px;border-top:1px solid var(--line);padding-top:18px}
+  .src{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+  .big{font-size:17px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Register — System Decision Trees</h1>
+  <p class="sub">Where does each functionality go to answer a question — one engine, or a scavenger hunt across the codebase?</p>
+  <p class="src">Source of truth: <code>dentist-registry-backend</code>. Permission matrix generated directly from the engine (<code>permissions/policy.py::can</code>). Roaming maps cited with <code>file:line</code>. Snapshot 2026-06-29.</p>
+
+  <div class="panel tight">
+    <span class="big">The bar:</span> &nbsp;
+    <span class="flow" style="display:inline-flex;margin:0">
+      <span class="node q">User → "Can I X?"</span>
+      <span class="arrow">→</span>
+      <span class="node engine">[ engine ]</span>
+      <span class="arrow">→</span>
+      <span class="node ans">Answer</span>
+    </span>
+    &nbsp; One question, one place, one answer. Not a rabid dog sprinting across four files.
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--yes)"></span> Yes</span>
+    <span><span class="dot" style="background:var(--faint)"></span> No</span>
+    <span><span class="dot" style="background:var(--self)"></span> Own resource only (is_self)</span>
+    <span><span class="dot" style="background:var(--setting)"></span> Only if a clinic setting is on</span>
+    <span><span class="dot" style="background:var(--target)"></span> Target-restricted</span>
+  </div>
+
+  <!-- ============================ PERMISSIONS ============================ -->
+  <h2>1 · Permissions <span class="pill warn">Engine built · not wired yet</span></h2>
+  <p class="lead">We built the engine — <code>permissions/policy.py::can(role, settings, action, is_self, target_role)</code>, one pure decider — and <b>proved</b> it reproduces today's rules exactly (282 tests). The matrix below is generated by calling that engine.</p>
+
+  <div class="panel tight" style="border-color:rgba(242,177,52,.35)">
+    <b class="c-setting">1000% honest:</b> the engine is <b>not load-bearing yet</b>. It lives on an open PR (#53), not on <code>main</code>, and <b>no call site calls it</b>. So today a permission question <i>still</i> roams — just less far than appointments — to these five places that each decide independently:
+    <ul class="tight muted">
+      <li><code>members/deps.py::require_role</code> — coarse route gates</li>
+      <li><code>scheduling/booking.py::can_decide / can_coordinate</code> — approve/reject/cancel</li>
+      <li><code>scheduling/service.py::can_manage_availability</code></li>
+      <li><code>invites/service.py::authorize_invite_mgmt</code></li>
+      <li><code>members/capabilities.py::resolve_capabilities</code> — the FE matrix (a <i>second</i> encoding of the same rules)</li>
+    </ul>
+    The migration (next E steps) rewires all five to call <code>can()</code>, then a CI guard forbids deciding permissions anywhere else. <b>After that</b> the badge turns green.
+  </div>
+
+  <h3>The decision tree (the target)</h3>
+  <div class="flow">
+    <span class="node q">"Can this user approve this booking?"</span>
+    <span class="arrow">→</span>
+    <span class="node engine">can(role, settings,&nbsp;DECIDE_BOOKING, is_self)</span>
+    <span class="arrow">→</span>
+    <span class="node ans">✅ / ❌</span>
+  </div>
+  <p class="muted" style="font-size:13px">Every protected action funnels through the one function. The caller supplies <i>facts</i> (role, settings, is_self, target); the engine makes the <i>decision</i>.</p>
+
+  <h3>Permission matrix — who can do what <span class="src">(generated from <code>can()</code>)</span></h3>
+  <table>
+    <thead><tr><th>Feature / action</th><th>Owner</th><th>Doctor</th><th>Assistant</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Approve / reject a booking<small>decide_booking</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-self">● Own assigned</span></td>
+        <td class="role"><span class="cell c-setting">⚙ If allow_staff_approval</span></td></tr>
+      <tr><td class="feat">Create a booking request<small>create_booking</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-self">● Own slots</span></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td></tr>
+      <tr><td class="feat">Cancel / coordinate a booking<small>coordinate_booking</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td></tr>
+      <tr><td class="feat">Manage availability (windows/blocks)<small>manage_availability</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-self">● Own only</span></td>
+        <td class="role"><span class="cell c-setting">⚙ If allow_staff_manage_availability</span></td></tr>
+      <tr><td class="feat">Manage patients<small>manage_patients</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td></tr>
+      <tr><td class="feat">Manage doctors (deactivate)<small>manage_doctors</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td></tr>
+      <tr><td class="feat">Edit a doctor's record<small>edit_doctor</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td></tr>
+      <tr><td class="feat">Add / invite a doctor<small>invite_doctor</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td></tr>
+      <tr><td class="feat">Create own doctor profile<small>self_create_doctor</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td></tr>
+      <tr><td class="feat">Manage assistants<small>manage_assistants</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td></tr>
+      <tr><td class="feat">Administer clinic + settings<small>administer_clinic</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td></tr>
+      <tr><td class="feat">Manage members<small>manage_members</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td></tr>
+      <tr><td class="feat">Create an invite<small>create_invite</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td></tr>
+      <tr><td class="feat">Manage invites (list/revoke/resend)<small>manage_invite</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-target">◆ Doctor invites only</span></td></tr>
+      <tr><td class="feat">View clinic schedule<small>view_clinic_schedule</small></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td>
+        <td class="role"><span class="cell c-no">✕ No</span></td>
+        <td class="role"><span class="cell c-yes">✓ Yes</span></td></tr>
+    </tbody>
+  </table>
+  <p class="src">Note: reading the doctor <i>roster</i> (GET /doctors) is ungated for any member — a deliberate read≠manage split, confirmed intended, not in this matrix.</p>
+
+  <!-- ============================ APPOINTMENTS ============================ -->
+  <h2>2 · Appointments <span class="pill bad">No engine · splattered</span></h2>
+  <p class="lead">There is <b>no appointment engine and no state machine</b>. The "decision tree" is implied by inline checks scattered across four files. Here is each question, and the <span class="count">number of places</span> it has to visit to get an answer — the rabid-dog map.</p>
+
+  <div class="roam">
+    <p class="q">🐕 "Can this request be approved / rejected?" → <span class="count">4 places</span>, 2 of them encoding the same rule twice</p>
+    <div class="hops">
+      <div class="hop"><span class="where">scheduling/router.py:227,245</span><span class="what">calls <code>authorize_decide(...)</code></span></div>
+      <div class="hop"><span class="where">booking.py:263 authorize_decide</span><span class="what">fetches the doctor (<code>doctors.get_doctor</code>) to compute "is this their assigned request?"</span></div>
+      <div class="hop"><span class="where">booking.py:34 can_decide</span><span class="what">reads role + <code>settings.allow_staff_approval</code> + is_assigned → the actual rule</span></div>
+      <div class="hop"><span class="where">members/capabilities.py</span><span class="what"><b>second copy</b> of the same rule, for the FE matrix — can drift from the one above</span></div>
+    </div>
+  </div>
+
+  <div class="roam">
+    <p class="q">🐕 "Is this request still actionable (can it transition)?" → <span class="count">5 places</span>, and they disagree</p>
+    <div class="hops">
+      <div class="hop"><span class="where">booking.py:291</span><span class="what">approve: <code>if status != "pending"</code></span></div>
+      <div class="hop"><span class="where">booking.py:324</span><span class="what">reject: <code>if status != "pending"</code> (re-typed)</span></div>
+      <div class="hop"><span class="where">booking.py:351</span><span class="what">cancel: <code>if status != "pending"</code> (re-typed)</span></div>
+      <div class="hop"><span class="where">booking.py:373</span><span class="what">resend: <code>if status != "pending"</code> (re-typed)</span></div>
+      <div class="hop"><span class="where">rules.py:17 is_expired</span><span class="what">expiry rule — but it's checked in <b>only</b> approve (booking.py:293), not the other three</span></div>
+    </div>
+  </div>
+
+  <div class="roam">
+    <p class="q">🐕 "Is this slot full?" → <span class="count">2 different computations</span> that can give different answers</p>
+    <div class="hops">
+      <div class="hop"><span class="where">booking.py:96 count_consumers</span><span class="what">counts by <code>slot_id</code> — the authoritative write-path answer (drives SlotFullError)</span></div>
+      <div class="hop"><span class="where">service.py:375-401 list_slots</span><span class="what">re-counts by <code>start_datetime</code> for the display "full/available" badge — a <b>separate</b> implementation</span></div>
+      <div class="hop"><span class="where">rules.py:11 capacity</span><span class="what">the capacity number (this part is single-source ✓)</span></div>
+      <div class="hop"><span class="where">booking.py:130 / :299 / service.py:401</span><span class="what">the <code>&gt;= capacity</code> comparison, written 3× (one with a <code>-1</code> self-fudge)</span></div>
+    </div>
+    <p class="ref" style="padding-left:14px">→ The diary can say "available" while booking rejects the same slot as full, the moment <code>start_datetime</code> and <code>slot_id</code> drift.</p>
+  </div>
+
+  <div class="roam">
+    <p class="q">🐕 "What's available on day X?" → <span class="count">2 resolvers</span> that already disagree</p>
+    <div class="hops">
+      <div class="hop"><span class="where">service.py:284 compute_slots</span><span class="what">resolves windows for the day, <b>subtracts blocks</b>, dedups overlaps → what's bookable</span></div>
+      <div class="hop"><span class="where">reads.py:149 get_day_schedule</span><span class="what">its <b>own</b> copy of the window-matching rule that <b>ignores blocks entirely</b></span></div>
+    </div>
+    <p class="ref" style="padding-left:14px">→ A doctor with a full-day block still shows as available in the day diary.</p>
+  </div>
+
+  <div class="roam">
+    <p class="q">🐕 "What status is this / what are the valid statuses?" → <span class="count">~20 magic strings</span>, no definition</p>
+    <div class="hops">
+      <div class="hop"><span class="where">models.py:72,98</span><span class="what">status is a bare <code>String(20)</code> — no enum (scheduling is the only domain without one)</span></div>
+      <div class="hop"><span class="where">booking.py:467 / reads.py:67</span><span class="what">the "set of valid statuses" hardcoded as a literal list, independently, twice</span></div>
+    </div>
+  </div>
+
+  <div class="panel tight" style="border-color:rgba(38,208,124,.3)">
+    <b class="c-yes">The one bright spot:</b> appointment <code>status</code> is written <b>only</b> from <code>booking.py</code> — single-writer is intact. The data discipline is fine; it's the <i>logic</i> that has no home.
+  </div>
+
+  <h3>What it should be</h3>
+  <div class="vs">
+    <div class="box bad">
+      <h4>Today</h4>
+      <p class="muted" style="margin:0">"Can this be approved?", "is it actionable?", "is the slot full?", "what's available?" each sprint across <code>booking.py</code> + <code>rules.py</code> + <code>service.py</code> + <code>reads.py</code>, re-deriving the answer, sometimes disagreeing.</p>
+    </div>
+    <div class="box good">
+      <h4>Target — one appointment engine</h4>
+      <div class="flow" style="margin:0 0 8px">
+        <span class="node q">"Can this transition?"</span>
+        <span class="arrow">→</span>
+        <span class="node engine">appointment state&nbsp;machine</span>
+        <span class="arrow">→</span>
+        <span class="node ans">✅ / ❌</span>
+      </div>
+      <p class="muted" style="margin:0">One enum of states, one transition table, one <code>assert_actionable</code>, one occupancy function, one availability resolver. The day-of-clinic states (arrived / completed / no-show — which <b>don't exist yet</b>) extend it instead of adding more roadkill.</p>
+    </div>
+  </div>
+
+  <!-- ============================ AVAILABILITY ============================ -->
+  <h2>3 · Availability <span class="pill bad">No engine · splattered</span></h2>
+  <p class="lead">Same shape as appointments. The slot <i>geometry</i> and capacity <i>number</i> are single-source ✓, but "the doctor's availability on day X" is resolved two different ways (see the appointments "what's available" map above), and the recurring/one-off validity rule is checked in three places (<code>schemas.py:18</code>, <code>service.py:136</code>, <code>service.py:448</code>).</p>
+  <p class="muted">Queued <b>after</b> appointments — same treatment: one resolver, one validity rule, one place.</p>
+
+  <!-- ============================ PLAN ============================ -->
+  <h2>Where we are</h2>
+  <table>
+    <thead><tr><th>System</th><th>Engine?</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="feat">Permissions</td><td><span class="pill warn">Built, not wired</span></td><td class="muted">engine + proof done (PR #53); migrate call sites → then green</td></tr>
+      <tr><td class="feat">Appointments</td><td><span class="pill bad">None</span></td><td class="muted">next: spec the state machine → characterization net → build</td></tr>
+      <tr><td class="feat">Availability</td><td><span class="pill bad">None</span></td><td class="muted">after appointments: one day-availability resolver</td></tr>
+    </tbody>
+  </table>
+
+  <p class="foot">
+    Generated as a point-in-time snapshot. The permission matrix is produced by calling <code>permissions/policy.py::can()</code> directly; the roaming maps are hand-traced from the code with <code>file:line</code> citations verified on 2026-06-29 against <code>dentist-registry-backend</code> (permissions engine on branch <code>feat/permissions-module</code>, everything else on <code>main</code>). If the code changes, regenerate.
+  </p>
+
+</div>
+</body>
+</html>
