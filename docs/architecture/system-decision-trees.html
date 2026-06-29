@@ -88,8 +88,8 @@
 <div class="wrap">
 
   <h1>Register — System Decision Trees</h1>
-  <p class="sub">Where does each functionality go to answer a question — one engine, or a scavenger hunt across the codebase?</p>
-  <p class="src">Source of truth: <code>dentist-registry-backend</code>. Both permission matrices below are computed by executing the actual code. Roaming maps cited <code>file:line</code>. Snapshot 2026-06-29.</p>
+  <p class="sub">Where does each functionality go to answer a question — one engine, or a scavenger hunt across the codebase? This is the picture of the temple: the one-stop, honest map of every core system and where its decisions actually live.</p>
+  <p class="src">Source of truth: the code itself — <code>dentist-registry-backend</code> (engines) + <code>dentist-registry-frontend</code> (the client that must only ask). Permission matrices below are computed by executing the actual code. Roaming maps cited <code>file:line</code>. Snapshot 2026-06-30.</p>
 
   <div class="panel tight">
     <span class="big">The bar:</span> &nbsp;
@@ -101,6 +101,10 @@
     &nbsp; One question, one place, one answer.
   </div>
 
+  <div class="panel tight" style="border-color:rgba(179,135,255,.35)">
+    <b>The Sentinel rule.</b> <span class="muted">Every core system gets <b>exactly one engine</b>, and that engine is the <b>only</b> place its decision is made — not two places, not "mostly one." Callers (UI, routes, hooks, components, other engines) only <i>ask</i>; nobody else <i>knows</i>. Code like <code>user.role === DOCTOR</code> outside the engine means the wall is already broken. A CI guard in each repo keeps it that way. This page stays 100% honest so a glance tells us the real layout — and the gaps.</span>
+  </div>
+
   <div class="legend">
     <span><span class="dot" style="background:var(--yes)"></span> Yes (✓)</span>
     <span><span class="dot" style="background:var(--no)"></span> No (✕)</span>
@@ -110,12 +114,12 @@
   </div>
 
   <!-- ============================ PERMISSIONS ============================ -->
-  <h2>1 · Permissions <span class="pill warn">Engine proven · awaiting sign-off to wire</span></h2>
-  <p class="lead">The matrix below is computed <b>twice, independently</b>: once from the <b style="color:var(--bad)">OLD scattered code</b> (six different modules), once from the <b style="color:var(--good)">NEW engine</b> (<code>permissions/policy.py::can()</code>, one function). They are placed side by side so we can confirm — together — that the engine is a faithful relocation before flipping the codebase over to it.</p>
+  <h2>1 · Permissions <span class="pill good">BE engine wired &amp; merged ✓</span> <span class="pill warn">FE wing open · Rule-9 pending</span></h2>
+  <p class="lead">The backend matrix below was computed <b>twice, independently</b>: once from the <b style="color:var(--bad)">OLD scattered code</b> (six different modules), once from the <b style="color:var(--good)">NEW engine</b> (<code>permissions/policy.py::can()</code>, one function). Proven byte-identical, then the codebase was flipped over to the engine and a CI guard locked it. <b>That flip is done and on <code>main</code></b> (PRs #52/#53/#54). The remaining permission work is the <i>frontend</i> wing (below) and the Rule-9 typed-<code>Decision</code> retrofit.</p>
 
   <div class="banner">
     <span class="num">45 / 45</span>
-    <div><b>Every cell identical.</b> OLD code and NEW engine return the exact same answer for all 15 features × 3 roles. <span class="muted">Computed live (and pinned by 282 equivalence tests). Wiring the codebase to the engine changes no behavior.</span></div>
+    <div><b>Every cell identical — and now live.</b> OLD code and NEW engine returned the exact same answer for all 15 features × 3 roles. <span class="muted">Pinned by 282 equivalence tests. The wiring shipped with zero behavior change; <code>tests/permissions/test_no_bypass.py</code> now fails CI if any role decision is made outside the engine.</span></div>
   </div>
 
   <h3>OLD scattered code &nbsp;vs&nbsp; NEW engine</h3>
@@ -224,10 +228,23 @@
         <span class="node engine">can(role, settings, action, is_self, target)</span><span class="arrow">→</span>
         <span class="node ans">✓ / ✕</span>
       </div>
-      <p class="muted" style="margin:0">One pure function. The caller supplies <i>facts</i>; the engine makes the <i>decision</i>. After wiring, a CI guard forbids deciding permissions anywhere else.</p>
+      <p class="muted" style="margin:0">One pure function. The caller supplies <i>facts</i>; the engine makes the <i>decision</i>. The CI guard now forbids deciding permissions anywhere else in <code>app/</code>.</p>
     </div>
   </div>
   <p class="src">Same 45 answers. Six places vs one. That difference — not the answers — is the whole point.</p>
+
+  <h3>1b · Permissions — the FE wing <span class="pill bad">client still decides · 17 sites</span></h3>
+  <p class="lead">The backend is single-source, but the <b>frontend re-derives permissions client-side</b> instead of asking. <code>GET /api/v1/me</code> returns <b>no capabilities</b>, so <b>17 origin sites</b> branch on <code>memberships[0].role</code> (6 of them also interpreting clinic settings) — a second, drift-prone copy of the rules living in the client. The messenger pattern already exists in the repo (<code>useMemberCapabilities()</code> + <code>permissions-tab.tsx</code> render purely from <code>allowed</code>/<code>reason_code</code>) but is pointed only at "view <i>another</i> member's permissions," never "what may <i>I</i> do."</p>
+  <div class="roam">
+    <p class="q">🐕 "What may <i>I</i> do?" → <span class="count">17 places</span> in the FE re-derive it from <code>role</code></p>
+    <div class="hops">
+      <div class="hop"><span class="where">app/{settings,requests,today,page}.tsx</span><span class="what"><code>role === "owner"/"assistant"/"doctor"</code> gating nav, fetches, CTAs</span></div>
+      <div class="hop"><span class="where">features/scheduling/request-status.ts:58</span><span class="what"><code>canDecide()</code> — re-encodes the approve rule (role + <code>allow_staff_approval</code> + self) the engine already owns</span></div>
+      <div class="hop"><span class="where">features/{patients,team,invitations,doctors,assistants}/…</span><span class="what">canCoordinate / canBook / canEdit / canManageInvites — all from <code>role</code>, prop-drilled outward</span></div>
+      <div class="hop"><span class="where">components/shell/app-shell.tsx:36</span><span class="what">nav visibility from <code>role</code> + <code>allow_staff_manage_availability</code></span></div>
+    </div>
+    <p class="ref" style="padding-left:14px">→ Target: one <code>useMyCapabilities()</code> reading a new clinic-scoped <code>/me/capabilities</code>; every <code>role===</code> deleted; a FE sentinel guard fails CI on any client-side permission decision. (<code>kind === "doctor"</code> entity-type checks are <b>not</b> authz — they stay.)</p>
+  </div>
 
   <!-- ============================ APPOINTMENTS ============================ -->
   <h2>2 · Appointments <span class="pill bad">No engine · splattered</span></h2>
@@ -291,14 +308,17 @@
   <table>
     <thead><tr><th>System</th><th>Engine?</th><th>Status</th></tr></thead>
     <tbody>
-      <tr><td class="feat">Permissions</td><td><span class="pill warn">Built &amp; proven (45/45)</span></td><td class="muted">awaiting joint sign-off → then wire call sites + CI guard → green</td></tr>
-      <tr><td class="feat">Appointments</td><td><span class="pill bad">None</span></td><td class="muted">next: spec the state machine → characterization net → build</td></tr>
+      <tr><td class="feat">Permissions — BE engine</td><td><span class="pill good">Wired &amp; merged ✓</span></td><td class="muted"><code>can()</code> single-source on <code>main</code> + anti-bypass CI guard live (#52/#53/#54)</td></tr>
+      <tr><td class="feat">Permissions — FE wing</td><td><span class="pill bad">Client still decides</span></td><td class="muted"><b>current front</b>: add <code>/me/capabilities</code> → <code>useMyCapabilities()</code> → delete 17 <code>role===</code> sites → FE sentinel guard</td></tr>
+      <tr><td class="feat">Permissions — Rule 9 (typed decisions)</td><td><span class="pill warn">Pending</span></td><td class="muted"><code>can() → bool</code> becomes <code>can() → Decision{allowed, reason, …}</code> across engine + 284 tests + call sites</td></tr>
+      <tr><td class="feat">Appointments</td><td><span class="pill bad">None</span></td><td class="muted">after permissions: spec the state machine → characterization net → build</td></tr>
       <tr><td class="feat">Availability</td><td><span class="pill bad">None</span></td><td class="muted">after appointments: one day-availability resolver</td></tr>
+      <tr><td class="feat">Invites</td><td><span class="pill bad">God-module</span></td><td class="muted">queued: slim to one engine (permission slice already in <code>can()</code>)</td></tr>
     </tbody>
   </table>
 
   <p class="foot">
-    Point-in-time snapshot. Both permission matrices are produced by executing the code: the OLD column calls the six scattered sources, the NEW column calls <code>permissions/policy.py::can()</code>; a script diffed all 45 cells (0 mismatches), and 282 equivalence tests pin the same fact. Roaming maps hand-traced with <code>file:line</code>, verified 2026-06-29 (permissions engine on branch <code>feat/permissions-module</code> / PR #53; everything else on <code>main</code>). If the code changes, regenerate.
+    Point-in-time snapshot. The backend permission matrices are produced by executing the code: the OLD column calls the six scattered sources, the NEW column calls <code>permissions/policy.py::can()</code>; a script diffed all 45 cells (0 mismatches), and 282 equivalence tests pin the same fact. The permissions engine + anti-bypass guard are <b>merged to <code>main</code></b> (PRs #52/#53/#54); the FE-wing inventory (17 sites) is hand-traced with <code>file:line</code>. Verified 2026-06-30. This page is the living scoreboard — every time the code's decision layout changes, this file changes with it, or it has lied.
   </p>
 
 </div>
