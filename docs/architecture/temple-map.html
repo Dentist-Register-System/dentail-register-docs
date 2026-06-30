@@ -129,7 +129,7 @@
   </div>
 
   <!-- ============================ PERMISSIONS ============================ -->
-  <h2>1 · Permissions <span class="pill good">BE engine wired &amp; merged ✓</span> <span class="pill warn">FE wing open · Rule-9 pending</span></h2>
+  <h2>1 · Permissions <span class="pill good">BE engine wired &amp; merged ✓</span> <span class="pill good">Rule-9 typed ✓</span> <span class="pill warn">FE wing open</span></h2>
   <p class="lead">The backend matrix below was computed <b>twice, independently</b>: once from the <b style="color:var(--bad)">OLD scattered code</b> (six different modules), once from the <b style="color:var(--good)">NEW engine</b> (<code>permissions/policy.py::can()</code>, one function). Proven byte-identical, then the codebase was flipped over to the engine and a CI guard locked it. <b>That flip is done and on <code>main</code></b> (PRs #52/#53/#54). The remaining permission work is the <i>frontend</i> wing (below) and the Rule-9 typed-<code>Decision</code> retrofit.</p>
 
   <div class="banner">
@@ -250,6 +250,7 @@
 
   <h3>1b · Permissions — the FE wing <span class="pill bad">client still decides · ≈79 sites</span></h3>
   <p class="lead">The backend is single-source — but the <b>frontend keeps its own copy of the rules and decides locally</b> instead of asking. <code>GET /api/v1/me</code> returns <b>no capabilities</b>, so the client re-derives every permission from <code>memberships[].role</code> (+ two clinic settings). Computed from the live code: <b>22 origin decisions</b> fan out through props into <b>~57 consumer sites</b> (buttons, tabs, nav, fetches, modal mounts) — <b>≈79 places total</b> that must be erased and replaced by one engine query. The messenger pattern already exists (<code>permissions-tab.tsx</code> renders straight from <code>useMemberCapabilities()</code>) — it is just never pointed at "what may <i>I</i> do."</p>
+  <p class="src" style="border-left:3px solid var(--good);padding-left:12px"><b class="c-yes">Backend now ready (PR 2, #56):</b> <code>GET /clinics/{id}/me/capabilities</code> is live and serves all 12 capabilities + <code>scope</code> for the caller's own role. The kill list below is unchanged — the FE still decides — but it now has one honest source to ask. PR 3 erases it.</p>
 
   <div class="banner warn">
     <span class="num">≈79</span>
@@ -484,8 +485,9 @@ flowchart TD
     <thead><tr><th>System</th><th>Engine?</th><th>Status</th></tr></thead>
     <tbody>
       <tr><td class="feat">Permissions — BE engine</td><td><span class="pill good">Wired &amp; merged ✓</span></td><td class="muted"><code>can()</code> single-source on <code>main</code> + anti-bypass CI guard live (#52/#53/#54)</td></tr>
-      <tr><td class="feat">Permissions — FE wing</td><td><span class="pill bad">Client still decides · ≈79 sites · 3 drifted</span></td><td class="muted"><b>current front</b>: add <code>/me/capabilities</code> → <code>useMyCapabilities()</code> → erase 22 origins + ~57 consumers → FE sentinel guard. Already 3 cells diverge from the engine (D1/D2/D3 above).</td></tr>
-      <tr><td class="feat">Permissions — Rule 9 (typed decisions)</td><td><span class="pill warn">Pending</span></td><td class="muted"><code>can() → bool</code> becomes <code>can() → Decision{allowed, reason, …}</code> across engine + 284 tests + call sites</td></tr>
+      <tr><td class="feat">Permissions — Rule 9 (typed decisions)</td><td><span class="pill good">Done ✓ (#55)</span></td><td class="muted"><code>can() → Decision{allowed, reason}</code> on <code>main</code>; <code>__bool__</code> raises so a missed call site can't silently allow; reasons are stable i18n codes. 472 permission tests.</td></tr>
+      <tr><td class="feat">Permissions — FE backend (endpoint)</td><td><span class="pill good">Done ✓ (#56)</span></td><td class="muted"><code>GET /clinics/{id}/me/capabilities</code> live; one catalog 6→12 covering every FE decision point; <code>CapabilityRead.scope</code> (self|all). The FE now has something to ask.</td></tr>
+      <tr><td class="feat">Permissions — FE wing (erasure)</td><td><span class="pill bad">Client still decides · ≈79 sites · 3 drifted</span></td><td class="muted"><b>current front (PR 3)</b>: <code>useMyCapabilities()</code> → erase 22 origins + ~57 consumers → FE sentinel guard. 3 cells still diverge from the engine (D1/D2/D3 above).</td></tr>
       <tr><td class="feat">Appointments</td><td><span class="pill bad">None</span></td><td class="muted">after permissions: spec the state machine → characterization net → build</td></tr>
       <tr><td class="feat">Availability</td><td><span class="pill bad">None</span></td><td class="muted">after appointments: one day-availability resolver</td></tr>
       <tr><td class="feat">Invites</td><td><span class="pill bad">God-module</span></td><td class="muted">queued: slim to one engine (permission slice already in <code>can()</code>)</td></tr>
