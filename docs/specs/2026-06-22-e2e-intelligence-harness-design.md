@@ -13,7 +13,7 @@ Catch real breakages and quantify usability automatically, every day. The produc
 - **Seed = API-driven** (real REST + Supabase admin API), so it is env-portable and doubles as API-contract coverage.
 - **Auth = email/password test users** (pre-confirmed via Supabase admin API), logged in through the **real login UI** once per role, session reused (`storageState`). Phone-OTP is excluded from automated runs.
 - **Exhaustive functional coverage** of screens, fields, and states; **i18n (en/hi) parity** and **light/dark theme** verified via a dedicated sweep (not by running the whole functional suite 4×).
-- **Env-parameterized** (`--env local|beta|prod`). v1 = local only (beta/prod not deployed yet). **Prod = read-only smoke subset only** — never mutates prod (Golden Rules §4, §15: preserve real clinic data/history).
+- **Env-parameterized** (`--env local|beta|prod`). v1 = local only (beta/prod not deployed yet). **Prod = read-only smoke subset only** — never mutates prod (Golden Rules §4: preserve real clinic data/history).
 - **Orchestration split:** a deterministic script does the mechanical pipeline; the daily `/loop` Claude session does only the judgment work.
 - **Results accumulate locally** with a **retention/prune policy** (must not fill the disk); a tiny trend store is committed for durable day-over-day diffing.
 
