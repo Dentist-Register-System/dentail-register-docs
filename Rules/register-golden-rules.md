@@ -723,37 +723,6 @@ If Claude Code finds ambiguity:
 
 ---
 
-# 15. Absolute Never Rules
-
-Claude Code must never:
-
-- Use non-open-source libraries without approval.
-- Add EMR/EHR/billing/payment/insurance/inventory features into V1.
-- Let AI schedule appointments.
-- Let WhatsApp define appointment truth.
-- Let Google Calendar define appointment truth.
-- Auto-promote waitlist entries.
-- Auto-release expired approval capacity.
-- Send patient confirmation before doctor approval.
-- Roll back confirmed appointments because WhatsApp failed.
-- Roll back confirmed appointments because calendar failed.
-- Allow slot capacity overflow except explicit doctor override.
-- Silently drop audit intent.
-- Delete historical appointment records as part of normal cancellation/reschedule/no-show workflows.
-- Hard-delete staff users as a normal operation.
-- Store secrets in code.
-- Mark features complete without relevant P0 tests.
-- Build around implementation convenience when it violates clinic reality.
-- Collapse My Schedule and Clinic Schedules into a single screen or use a dropdown to switch between them (Rule 18.2).
-- Use a dropdown (`<select>`) for doctor selection in Clinic Schedules — use the M3 DoctorPicker (bottom-sheet + search) instead (Rule 18.3).
-- Implement multi-field entity creation (clinic, doctor profile) as a single dense form or plain dialog — use the guided one-question wizard (Rule 18.4).
-- Close a dialog/sheet silently after an important create/save/approve/reject action without showing a success card (Rule 18.5).
-- Run a local dev server, database, or dev test on the test-suite-reserved ports `5434`/`8001`/`3001` (Rule 10.6).
-- Treat `e2e`-marked data (`[E2E]` name prefix, `e2e+…` emails, `-e2e` suffix) as real, or manually create real/dev/prod data using the `e2e` marker (Rule 10.7).
-- Enable platform auto-deploy, or deploy/release a frontend ahead of the backend it depends on (Rule 19).
-
----
-
 # 16. Internationalization Rules
 
 ## Rule 16.1 — No hardcoded user-facing strings.
