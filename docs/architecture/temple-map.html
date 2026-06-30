@@ -250,7 +250,12 @@
 
   <h3>1b · Permissions — the FE wing <span class="pill bad">client still decides · ≈79 sites</span></h3>
   <p class="lead">The backend is single-source — but the <b>frontend keeps its own copy of the rules and decides locally</b> instead of asking. <code>GET /api/v1/me</code> returns <b>no capabilities</b>, so the client re-derives every permission from <code>memberships[].role</code> (+ two clinic settings). Computed from the live code: <b>22 origin decisions</b> fan out through props into <b>~57 consumer sites</b> (buttons, tabs, nav, fetches, modal mounts) — <b>≈79 places total</b> that must be erased and replaced by one engine query. The messenger pattern already exists (<code>permissions-tab.tsx</code> renders straight from <code>useMemberCapabilities()</code>) — it is just never pointed at "what may <i>I</i> do."</p>
-  <p class="src" style="border-left:3px solid var(--good);padding-left:12px"><b class="c-yes">Backend now ready (PR 2, #56):</b> <code>GET /clinics/{id}/me/capabilities</code> is live and serves all 12 capabilities + <code>scope</code> for the caller's own role. The kill list below is unchanged — the FE still decides — but it now has one honest source to ask. PR 3 erases it.</p>
+  <div class="panel tight" style="border-color:rgba(38,208,124,.3)"><b class="c-yes">Backend now ready (PRs #55 / #56 / #57):</b> two honest sources for the FE to read, following <b>PDP/PEP separation</b> (the engine decides; the client only reads):
+    <ul class="tight" style="margin:6px 0 0">
+      <li><b>Clinic-wide capabilities</b> — <code>GET /clinics/{id}/me/capabilities</code> serves all 12 <code>{key, allowed, reason_code, …}</code> for the caller's own role. Gates "can I do X at all here" (nav, buttons, page access).</li>
+      <li><b>Per-resource decisions</b> — the engine emits the answer <i>on each row</i>: <code>can_decide</code> on request rows, <code>can_manage_availability</code> on doctor payloads. The FE reads the boolean; it never combines scope + identity itself. (The earlier <code>scope</code> field was a client-decides leak — removed in #57.)</li>
+    </ul>
+    <span class="muted">The kill list below is unchanged — the FE still decides — but it now has one honest source per question. PR 3 erases it.</span></div>
 
   <div class="banner warn">
     <span class="num">≈79</span>
@@ -354,7 +359,7 @@ flowchart TD
       <p class="mcap">C5 · canManage — team-table.tsx:395 → :399/427/453</p>
     </div>
   </div>
-  <p class="src">These four chain role + a clinic setting + a per-row identity fact (<code>doctor_id</code>) + status — which is exactly why they can't honestly be one matrix cell. In the target, the engine returns the decision (with <code>scope</code>); the FE only supplies the identity fact.</p>
+  <p class="src">These four chain role + a clinic setting + a per-row identity fact (<code>doctor_id</code>) + status — which is exactly why they can't honestly be one matrix cell, and why the FE must not compute them. <b>Target (PDP/PEP):</b> the engine resolves the whole chain <i>per resource</i> and emits one boolean (<code>can_decide</code> / <code>can_manage_availability</code>) on the row; the FE just reads it. Add a setting tomorrow → only the engine changes, never the client.</p>
 
   <p class="sub2">The kill list — every site, the demolition map <span class="pill bad">22 origins → ≈79 total</span></p>
   <details class="kill">
@@ -486,7 +491,8 @@ flowchart TD
     <tbody>
       <tr><td class="feat">Permissions — BE engine</td><td><span class="pill good">Wired &amp; merged ✓</span></td><td class="muted"><code>can()</code> single-source on <code>main</code> + anti-bypass CI guard live (#52/#53/#54)</td></tr>
       <tr><td class="feat">Permissions — Rule 9 (typed decisions)</td><td><span class="pill good">Done ✓ (#55)</span></td><td class="muted"><code>can() → Decision{allowed, reason}</code> on <code>main</code>; <code>__bool__</code> raises so a missed call site can't silently allow; reasons are stable i18n codes. 472 permission tests.</td></tr>
-      <tr><td class="feat">Permissions — FE backend (endpoint)</td><td><span class="pill good">Done ✓ (#56)</span></td><td class="muted"><code>GET /clinics/{id}/me/capabilities</code> live; one catalog 6→12 covering every FE decision point; <code>CapabilityRead.scope</code> (self|all). The FE now has something to ask.</td></tr>
+      <tr><td class="feat">Permissions — FE backend (clinic-wide)</td><td><span class="pill good">Done ✓ (#56)</span></td><td class="muted"><code>GET /clinics/{id}/me/capabilities</code> live; one catalog 6→12 covering every FE decision point. The FE reads "can I do X at all here".</td></tr>
+      <tr><td class="feat">Permissions — FE backend (per-resource)</td><td><span class="pill good">Done ✓ (#57)</span></td><td class="muted">PDP/PEP: engine emits <code>can_decide</code> (request rows) + <code>can_manage_availability</code> (doctor payloads) per resource; the leaky <code>scope</code> field removed. The FE reads a boolean, never decides.</td></tr>
       <tr><td class="feat">Permissions — FE wing (erasure)</td><td><span class="pill bad">Client still decides · ≈79 sites · 3 drifted</span></td><td class="muted"><b>current front (PR 3)</b>: <code>useMyCapabilities()</code> → erase 22 origins + ~57 consumers → FE sentinel guard. 3 cells still diverge from the engine (D1/D2/D3 above).</td></tr>
       <tr><td class="feat">Appointments</td><td><span class="pill bad">None</span></td><td class="muted">after permissions: spec the state machine → characterization net → build</td></tr>
       <tr><td class="feat">Availability</td><td><span class="pill bad">None</span></td><td class="muted">after appointments: one day-availability resolver</td></tr>
