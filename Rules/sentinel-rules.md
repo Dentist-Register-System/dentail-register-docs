@@ -58,11 +58,16 @@ Agents imitate what's already in the files, so the rules live **in** the files.
 
 ### Header template
 
+> **The header must not embed the literal smell.** State the rule in prose — never
+> write `role ==` / `role ===` / `MemberRole.` inside the header, or the anti-bypass
+> guards (which grep source for exactly those tokens) will flag every header. The
+> *example* of the smell lives in this doc (not scanned), never in the per-file header.
+
 TypeScript:
 ```ts
 /**
  * Sentinel rules (full set: Rules/sentinel-rules.md). Core, in-file so they propagate:
- *   • The FE only ASKS the backend for permissions; it never decides (no role=== gates).
+ *   • The FE only ASKS the backend for permissions; it never compares roles to decide.
  *   • One source of truth per decision. No dead code. No imports inside functions.
  *   • Honest tests only — real assertions, no placeholders.
  *
@@ -73,7 +78,7 @@ TypeScript:
 Python:
 ```python
 """Sentinel rules (full set: Rules/sentinel-rules.md). Core, in-file so they propagate:
-  • Each decision lives in exactly ONE engine; callers ask (no role== outside permissions/).
+  • Each decision lives in exactly ONE engine; callers ask — they never compare roles outside permissions/.
   • One source of truth per decision. No dead code. No imports inside functions.
   • Honest tests only — real assertions, no placeholders.
 
