@@ -817,6 +817,16 @@ web/iOS/Android; only platform-native patterns may vary.
 The design-system foundation must be implemented before building further feature screens. Do not
 accumulate UI before the token/theme/component foundation is in place.
 
+## Rule 17.8 — Frontend code meets the Frontend Handbook.
+
+All frontend code must meet the engineering-quality bar in **`Rules/frontend-handbook.md`** — the
+code-quality sibling of the UX-standards runbook (§17.0). It is the binding standard for type safety,
+component & state design, effects & React-Compiler purity, decision centralization, performance (Core
+Web Vitals budgets), accessibility, error/empty states, testing honesty, and module boundaries — each
+with its enforcement mechanism (structure → CI guard → lint → review → forward-invariant comment).
+Consult it for any FE code work; where it and a Golden Rule overlap, the (usually stricter) Golden
+Rule is the binding local expression.
+
 ---
 
 # 18. Product & Navigation Rules (Owner-Doctor, Schedules, UI Selection)
