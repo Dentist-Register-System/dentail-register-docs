@@ -168,9 +168,10 @@
     <tbody>
       <tr><td class="feat">Permissions — BE engine</td><td><span class="pill good">Wired &amp; merged ✓</span></td><td class="muted"><code>can()</code> single-source on <code>main</code> + anti-bypass CI guard live (#52/#53/#54)</td></tr>
       <tr><td class="feat">Permissions — Rule 9 (typed decisions)</td><td><span class="pill good">Done ✓ (#55)</span></td><td class="muted"><code>can() → Decision{allowed, reason}</code> on <code>main</code>; <code>__bool__</code> raises so a missed call site can't silently allow; reasons are stable i18n codes. 472 permission tests.</td></tr>
-      <tr><td class="feat">Permissions — FE backend (clinic-wide)</td><td><span class="pill good">Done ✓ (#56)</span></td><td class="muted"><code>GET /clinics/{id}/me/capabilities</code> live; one catalog 6→12 covering every FE decision point. The FE reads "can I do X at all here".</td></tr>
+      <tr><td class="feat">Permissions — FE backend (clinic-wide)</td><td><span class="pill good">Done ✓ (#56)</span></td><td class="muted"><code>GET /clinics/{id}/me/capabilities</code> live; one catalog 6→14 (added owner-only <code>manage_assistants</code> + <code>manage_assistant_invites</code>, #59) covering every FE decision point. The FE reads "can I do X at all here".</td></tr>
       <tr><td class="feat">Permissions — FE backend (per-resource)</td><td><span class="pill good">Done ✓ (#57)</span></td><td class="muted">PDP/PEP: engine emits <code>can_decide</code> (request rows) + <code>can_manage_availability</code> (doctor payloads) per resource; the leaky <code>scope</code> field removed. The FE reads a boolean, never decides.</td></tr>
-      <tr><td class="feat">Permissions — FE wing (erasure)</td><td><span class="pill bad">Client still decides · ≈79 sites · 3 drifted</span></td><td class="muted"><b>current front (PR 3)</b>: <code>useMyCapabilities()</code> → erase 22 origins + ~57 consumers → FE sentinel guard. 3 cells still diverge from the engine (D1/D2/D3 above).</td></tr>
+      <tr><td class="feat">Permissions — FE wing (erasure)</td><td><span class="pill good">Done ✓ (#80/#81)</span></td><td class="muted">All ≈79 FE permission-decision sites erased — <code>useMyCapabilities()</code> + per-row flags replaced every origin + consumer; the 3 divergences (D1/D2/D3) are fixed, the FE now matches the engine.</td></tr>
+      <tr><td class="feat">Permissions — FE sentinel guard</td><td><span class="pill good">Live ✓ (#82)</span></td><td class="muted">CI fails on any client-side <code>role===</code> permission decision; only the book-flow self-lock remains, marked <code>// sentinel-exempt</code>. Both wings of the permissions temple are now closed.</td></tr>
       <tr><td class="feat">Appointments</td><td><span class="pill bad">None</span></td><td class="muted">after permissions: spec the state machine → characterization net → build</td></tr>
       <tr><td class="feat">Availability</td><td><span class="pill bad">None</span></td><td class="muted">after appointments: one day-availability resolver</td></tr>
       <tr><td class="feat">Invites</td><td><span class="pill bad">God-module</span></td><td class="muted">queued: slim to one engine (permission slice already in <code>can()</code>)</td></tr>
@@ -182,8 +183,8 @@
   <!-- ============================ PERMISSIONS ============================ -->
   <section id="panel-permissions" class="tabpanel" role="tabpanel" aria-labelledby="tab-permissions" tabindex="0">
 
-  <h2>1 · Permissions <span class="pill good">BE engine wired &amp; merged ✓</span> <span class="pill good">Rule-9 typed ✓</span> <span class="pill warn">FE wing open</span></h2>
-  <p class="lead">The backend matrix below was computed <b>twice, independently</b>: once from the <b style="color:var(--bad)">OLD scattered code</b> (six different modules), once from the <b style="color:var(--good)">NEW engine</b> (<code>permissions/policy.py::can()</code>, one function). Proven byte-identical, then the codebase was flipped over to the engine and a CI guard locked it. <b>That flip is done and on <code>main</code></b> (PRs #52/#53/#54). The remaining permission work is the <i>frontend</i> wing (below) and the Rule-9 typed-<code>Decision</code> retrofit.</p>
+  <h2>1 · Permissions <span class="pill good">BE engine wired &amp; merged ✓</span> <span class="pill good">Rule-9 typed ✓</span> <span class="pill good">FE wing complete ✓</span></h2>
+  <p class="lead">The backend matrix below was computed <b>twice, independently</b>: once from the <b style="color:var(--bad)">OLD scattered code</b> (six different modules), once from the <b style="color:var(--good)">NEW engine</b> (<code>permissions/policy.py::can()</code>, one function). Proven byte-identical, then the codebase was flipped over to the engine and a CI guard locked it. <b>That flip is done and on <code>main</code></b> (PRs #52/#53/#54). The Rule-9 typed-<code>Decision</code> retrofit and the <i>frontend</i> wing (below) are <b>now both complete too</b> — the Permissions temple is closed on both wings.</p>
 
   <div class="banner">
     <span class="num">45 / 45</span>
@@ -301,21 +302,21 @@
   </div>
   <p class="src">Same 45 answers. Six places vs one. That difference — not the answers — is the whole point.</p>
 
-  <h3>1b · Permissions — the FE wing <span class="pill bad">client still decides · ≈79 sites</span></h3>
-  <p class="lead">The backend is single-source — but the <b>frontend keeps its own copy of the rules and decides locally</b> instead of asking. <code>GET /api/v1/me</code> returns <b>no capabilities</b>, so the client re-derives every permission from <code>memberships[].role</code> (+ two clinic settings). Computed from the live code: <b>22 origin decisions</b> fan out through props into <b>~57 consumer sites</b> (buttons, tabs, nav, fetches, modal mounts) — <b>≈79 places total</b> that must be erased and replaced by one engine query. The messenger pattern already exists (<code>permissions-tab.tsx</code> renders straight from <code>useMemberCapabilities()</code>) — it is just never pointed at "what may <i>I</i> do."</p>
-  <div class="panel tight" style="border-color:rgba(38,208,124,.3)"><b class="c-yes">Backend now ready (PRs #55 / #56 / #57):</b> two honest sources for the FE to read, following <b>PDP/PEP separation</b> (the engine decides; the client only reads):
+  <h3>1b · Permissions — the FE wing <span class="pill good">FE wing complete — zero permission decisions, CI-guarded (#80/#81/#82)</span></h3>
+  <p class="lead"><span class="pill good">Complete ✓</span> The backend is single-source and the <b>frontend now asks instead of deciding</b> — this section records the wing that was demolished. <b>Previously</b> the frontend kept its own copy of the rules and decided locally: <code>GET /api/v1/me</code> returned <b>no capabilities</b>, so the client re-derived every permission from <code>memberships[].role</code> (+ two clinic settings). Computed from the live code at the time: <b>22 origin decisions</b> fanned out through props into <b>~57 consumer sites</b> (buttons, tabs, nav, fetches, modal mounts) — <b>≈79 places total</b>, all now erased (#80/#81) and replaced by one engine query. The messenger pattern already existed (<code>permissions-tab.tsx</code> renders straight from <code>useMemberCapabilities()</code>) — it is now the pattern everywhere.</p>
+  <div class="panel tight" style="border-color:rgba(38,208,124,.3)"><b class="c-yes">Both wings complete — backend (PRs #55 / #56 / #57 / #59) + frontend (#80 / #81 / #82):</b> two honest sources the FE now reads, following <b>PDP/PEP separation</b> (the engine decides; the client only reads):
     <ul class="tight" style="margin:6px 0 0">
-      <li><b>Clinic-wide capabilities</b> — <code>GET /clinics/{id}/me/capabilities</code> serves all 12 <code>{key, allowed, reason_code, …}</code> for the caller's own role. Gates "can I do X at all here" (nav, buttons, page access).</li>
+      <li><b>Clinic-wide capabilities</b> — <code>GET /clinics/{id}/me/capabilities</code> serves all 14 <code>{key, allowed, reason_code, …}</code> for the caller's own role (incl. the owner-only assistant-admin caps, #59). Gates "can I do X at all here" (nav, buttons, page access).</li>
       <li><b>Per-resource decisions</b> — the engine emits the answer <i>on each row</i>: <code>can_decide</code> on request rows, <code>can_manage_availability</code> on doctor payloads. The FE reads the boolean; it never combines scope + identity itself. (The earlier <code>scope</code> field was a client-decides leak — removed in #57.)</li>
     </ul>
-    <span class="muted">The kill list below is unchanged — the FE still decides — but it now has one honest source per question. PR 3 erases it.</span></div>
+    <span class="muted">The kill list below is now the historical demolition map — PR 3 (#80/#81) erased every site; the FE reads these sources and decides nothing.</span></div>
 
-  <div class="banner warn">
-    <span class="num">≈79</span>
-    <div><b>FE decision sites to demolish — 22 origins + ~57 consumers.</b> <span class="muted">And the client's copy has already <b>drifted</b>: 3 cells where the FE decides differently from the engine. Every site below becomes <code>cap("…").allowed</code> read from <code>/me/capabilities</code>. <code>kind === "doctor"</code> entity-type / self-identity / display-label checks are <b>not</b> authz and stay.</span></div>
+  <div class="banner">
+    <span class="num">79 / 79</span>
+    <div><b>FE decision sites demolished — 22 origins + ~57 consumers, all erased (#80/#81).</b> <span class="muted">The 3 drifted cells (D1/D2/D3) are <b>fixed</b> — the FE now matches the engine. Every site below became <code>cap("…").allowed</code> read from <code>/me/capabilities</code>. <code>kind === "doctor"</code> entity-type / self-identity / display-label checks are <b>not</b> authz and stayed.</span></div>
   </div>
 
-  <p class="sub2">The FE matrix — what the client decides today, and where it lies</p>
+  <p class="sub2">The FE matrix — what the client decided <b>before demolition</b>, and where it lied</p>
   <table class="cmp">
     <thead><tr><th class="feath">FE decision (file:line)</th><th>Owner</th><th>Doctor</th><th>Assistant</th><th>vs&nbsp;engine</th></tr></thead>
     <tbody>
@@ -337,24 +338,27 @@
   </table>
   <p class="src">● own-resource only · ⚙ only if clinic setting on · ◑ depends on which team table · ≡ matches engine · <span class="warncell">⚠</span> diverges (see below).</p>
 
-  <p class="sub2">Where the FE secretly disagrees with the engine <span class="pill bad">3 drifted cells</span></p>
+  <p class="sub2">Where the FE secretly disagreed with the engine <span class="pill good">3 divergences — FIXED ✓</span></p>
   <div class="roam">
-    <p class="q"><span class="warncell">⚠ D1</span> — A doctor cannot book, and the FE contradicts itself <span class="count">create_booking · Doctor</span></p>
+    <p class="q"><span class="pill good">FIXED ✓</span> <span class="mt">D1</span> — A doctor cannot book, and the FE contradicts itself <span class="count">create_booking · Doctor</span></p>
     <div class="hops">
       <div class="hop"><span class="where">doctors/[id]/page.tsx:50</span><span class="what">Book CTA shown only for <code>owner || assistant</code> → a doctor gets <b>no Book button</b>, even on their own page. Engine: <code>create_booking</code> Doctor ● (own slots) — allowed.</span></div>
       <div class="hop"><span class="where">patient-detail.tsx:983</span><span class="what">the <b>same</b> action here gives Doctor ● — the two FE copies disagree with <i>each other</i>; only this one matches the engine.</span></div>
+      <div class="hop"><span class="where">resolved · #80/#81</span><span class="what"><b>Now:</b> both sites read the engine's per-resource flag — a doctor gets the Book button on their own slots, and the two contradictory copies are gone. Matches engine ✓.</span></div>
     </div>
   </div>
   <div class="roam">
-    <p class="q"><span class="warncell">⚠ D2</span> — Assistants see zero invite surfaces <span class="count">manage_invite · Assistant</span></p>
+    <p class="q"><span class="pill good">FIXED ✓</span> <span class="mt">D2</span> — Assistants see zero invite surfaces <span class="count">manage_invite · Assistant</span></p>
     <div class="hops">
       <div class="hop"><span class="where">invitations/permissions.ts:4 → doctors-tabs.tsx:54,150</span><span class="what"><code>canManageInvites = role==="owner"</code> → an assistant sees no Invites tab, no pending-invites card, no invite button on the Doctors page. Engine: <code>manage_invite</code> Assistant ◆ — may manage <b>doctor</b> invites (resend/revoke).</span></div>
+      <div class="hop"><span class="where">resolved · #80/#81</span><span class="what"><b>Now:</b> the assistant reads <code>cap("manage_invite").allowed</code> and sees / manages <b>doctor</b> invites (resend &amp; revoke). Matches engine ✓.</span></div>
     </div>
   </div>
   <div class="roam">
-    <p class="q"><span class="warncell">⚠ D3</span> — Assistants lose <i>read</i> access to doctor schedules <span class="count">view_clinic_schedule · Assistant</span></p>
+    <p class="q"><span class="pill good">FIXED ✓</span> <span class="mt">D3</span> — Assistants lose <i>read</i> access to doctor schedules <span class="count">view_clinic_schedule · Assistant</span></p>
     <div class="hops">
       <div class="hop"><span class="where">app-shell.tsx:35-37,40</span><span class="what">the clinic-schedules destination is gated by <code>allow_staff_manage_availability</code>; with it <b>off</b>, an assistant can't even navigate to view doctor availability. Engine separates <code>view_clinic_schedule</code> (Assistant ✓, unconditional) from <code>manage_availability</code> (⚙). The FE collapses view behind the manage setting.</span></div>
+      <div class="hop"><span class="where">resolved · #80/#81</span><span class="what"><b>Now:</b> nav reads <code>cap("view_clinic_schedule").allowed</code> (unconditional for assistants), separate from the manage-availability setting. Matches engine ✓.</span></div>
     </div>
   </div>
 
@@ -416,17 +420,17 @@ flowchart TD
 
   <p class="sub2">The kill list — every site, the demolition map <span class="pill bad">22 origins → ≈79 total</span></p>
 
-  <div class="burn" aria-label="FE kill-list demolition burn-down: 0 of ~79 sites erased">
+  <div class="burn" aria-label="FE kill-list demolition burn-down: 79 of ~79 sites erased — 100%">
     <div class="track">
-      <div class="seg origin" style="width:27.85%" title="22 origin decisions — still live">22 origins</div>
-      <div class="seg consumer" style="width:72.15%" title="~57 consumer / pass-through / leak sites — still live">~57 consumers</div>
+      <div class="seg done" style="width:100%" title="all ≈79 sites demolished — 22 origins + ~57 consumers erased">79 erased — 100%</div>
     </div>
-    <div class="scale"><span>0</span><span>target → 0 erased</span><span>≈79</span></div>
-    <p class="meta"><b>Burn-down: 0 of ≈79 erased (0%).</b> The whole bar is still standing — 22 <span class="c-no">origin</span> decisions + ~57 <span class="warncell">consumer</span>/pass-through/leak sites — all live until PR 3 replaces them with <code>cap("…").allowed</code>. The bar turns <span class="c-yes">green</span> from the left as sites fall; done = 0 today.</p>
+    <div class="scale"><span>0</span><span>target reached → 79 erased</span><span>≈79</span></div>
+    <p class="meta"><b>Burn-down: 79 of ≈79 erased (100%).</b> The whole bar is <span class="c-yes">green</span> — all 22 <span class="c-no">origin</span> decisions + ~57 <span class="warncell">consumer</span>/pass-through/leak sites are gone, replaced by <code>cap("…").allowed</code> reads (#80 erased ~76 origins + consumers; #81 the last 3 GAP sites). The FE sentinel CI guard (#82) holds it at zero.</p>
   </div>
 
   <details class="kill">
     <summary>Expand the full demolition map (≈79 sites: 22 origins + ~57 consumers/pass-throughs)</summary>
+    <p class="src" style="margin:8px 0 0;color:var(--good)"><b>Demolished ✓</b> — all ≈79 sites are gone: <b>#80</b> erased ~76 origins + consumers, <b>#81</b> the last 3 GAP sites. The list below stays as the historical demolition map; the FE now reads <code>cap("…").allowed</code> everywhere and the sentinel guard (<b>#82</b>) fails CI on any new <code>role===</code> decision — only the book-flow self-lock remains, marked <code>// sentinel-exempt</code>.</p>
     <table>
       <thead><tr><th>file:line</th><th>gates</th><th>traces to · capability</th><th>kind</th></tr></thead>
       <tbody>
@@ -490,7 +494,7 @@ flowchart TD
     <p class="src" style="margin-top:10px">Source: every row read from the live FE code 2026-06-30. The target erases all <span class="tag o">origin</span>/<span class="tag c">consumer</span>/passthru/leak rows; the <span class="tag keep">keep</span> rows are identity/self-resource facts the engine legitimately leaves to the client.</p>
   </details>
 
-  <p class="src" style="margin-top:18px">Note: the FE-wing inventory above reflects the <b>pre-demolition</b> state of the client. It will be refreshed when PR 3 (the erasure) lands.</p>
+  <p class="src" style="margin-top:18px">Note: the FE-wing inventory above is the <b>historical demolition map</b> — the pre-demolition state of the client. PR 3 (the erasure) landed as <b>#80</b> + <b>#81</b>; every <span class="tag o">origin</span> / <span class="tag c">consumer</span> row is now gone, leaving only the <span class="tag keep">keep</span> identity facts the engine legitimately leaves to the client.</p>
 
   </section>
 
@@ -625,7 +629,7 @@ flowchart LR
   </section>
 
   <p class="foot">
-    Point-in-time snapshot. The backend permission matrices are produced by executing the code: the OLD column calls the six scattered sources, the NEW column calls <code>permissions/policy.py::can()</code>; a script diffed all 45 cells (0 mismatches), and 282 equivalence tests pin the same fact. The permissions engine + anti-bypass guard are <b>merged to <code>main</code></b> (PRs #52/#53/#54); the FE-wing inventory (17 sites) is hand-traced with <code>file:line</code>. Verified 2026-06-30. This page is the living scoreboard — every time the code's decision layout changes, this file changes with it, or it has lied.
+    Point-in-time snapshot. The backend permission matrices are produced by executing the code: the OLD column calls the six scattered sources, the NEW column calls <code>permissions/policy.py::can()</code>; a script diffed all 45 cells (0 mismatches), and 282 equivalence tests pin the same fact. The permissions engine + anti-bypass guard are <b>merged to <code>main</code></b> (PRs #52/#53/#54), and the <b>FE wing is now complete</b> — all ≈79 client-decision sites demolished (#80/#81) with a FE sentinel CI guard (#82). The <b>Permissions temple is closed on both wings.</b> Verified 2026-06-30. This page is the living scoreboard — every time the code's decision layout changes, this file changes with it, or it has lied.
   </p>
 
 </div>
