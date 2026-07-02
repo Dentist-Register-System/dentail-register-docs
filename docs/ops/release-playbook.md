@@ -38,9 +38,11 @@ Equivalent manual order if running by hand: `./deploy.sh deploy-be` (wait health
 - **Never enable auto-deploy** to "save a step" (Golden Rule §19.1).
 - **Never run `alembic upgrade` on deploy** — migrations are controller-only via MCP.
 - **Never echo secret values.** The script sources them and prints only status.
+- **Keep `DEPLOY-STATE.md` current — unprompted.** The gatekeeper updates the workspace-root `DEPLOY-STATE.md` (live BE/FE versions, tags, service URLs/IDs, next step, gotchas) at **every** deploy step, **without being asked**. The user does not hold deploy state in their head — the log is the source of truth: read it first, write it as you go.
 
 ## After the release
 - Report: the version, BE/FE deploy results, smoke status codes, tags created.
+- **Update `DEPLOY-STATE.md`** with the new live BE/FE versions + tags (it should already be current from writing it as you went).
 - Move the relevant board item(s) to **In Review/Completed** as appropriate.
 - If anything failed mid-release (e.g. BE healthy but FE deploy failed), say so plainly — the FE may be behind the BE, which is the safe direction, but flag it.
 
