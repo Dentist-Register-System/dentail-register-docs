@@ -129,6 +129,27 @@ Avoid:
 
 This is an operational coordination system, not a hospital management platform.
 
+## Rule 2.4 — Never proceed on an assumption. Surface every unresolved decision.
+
+When any decision is unresolved — product, design, data, scope, or a "small" detail —
+**STOP and surface it to the human.** Never default, never infer, never "assume and note
+it," never treat a timed-out or unread question as consent — re-ask instead. A choice the
+human must own is a **blocking gate**, not a recommendation to run with.
+
+- Every design/spec carries a **Decision Ledger**: each decision is **✅ RULED** (by the
+  human, dated) or **⛔ OPEN**. A spec with any OPEN item is **BLOCKED** — its status cannot
+  be "Approved," and no code may be written for it.
+- The same halt binds implementers (including subagents, which do not inherit session
+  rules — inject the directive): meet a choice the spec did not rule → **STOP and ask.**
+  The diff waits for the human, not the other way around.
+- **How to surface:** use a structured choice question the human can select from or type into
+  (the `AskUserQuestion` tool) — the preferred channel for every question and surfaced
+  assumption, not a free-text prompt buried in prose. Lead with a recommended option.
+
+This is the collaboration contract — the human decides, the software coordinates (Rule 1.1).
+Guessing to keep moving is a defect, on par with putting a decision outside its engine
+(Sentinel).
+
 ---
 
 # 3. Open Source and Dependency Rules
