@@ -1,0 +1,17 @@
+name: spec-ledger-guard
+
+# Enforces Golden Rule 2.4: an "Approved" spec must carry no unresolved decisions.
+on:
+  pull_request:
+    paths: ['docs/specs/**', 'scripts/check-spec-ledger.sh']
+  push:
+    branches: [main]
+    paths: ['docs/specs/**', 'scripts/check-spec-ledger.sh']
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check spec Decision Ledgers (Golden Rule 2.4)
+        run: bash scripts/check-spec-ledger.sh docs/specs

@@ -13,6 +13,10 @@ part of the system — UI, API routes, hooks, components, other engines — *ask
 Nobody else *decides*. If a decision can be found in two files, the architecture
 is broken and we fix it.
 
+> **The Assumption Rule (Golden Rule 2.4).** Never proceed on an unresolved decision or any
+> assumption — STOP and surface it to the human. A spec with an OPEN decision is BLOCKED and
+> cannot be "Approved." Full text in the Golden Rules.
+
 ## The 14 Sentinel Rules
 
 1. **The caller never knows the business reason.** The caller asks the engine; the engine decides.
